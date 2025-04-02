@@ -41,6 +41,7 @@ public class ChatController {
         }
         System.out.println("Authenticated user: " + user.toString());
         Users.add(user.getUsername());
+        model.addAttribute("usermessage", user.getUsername());
         model.addAttribute("users", Users);
         model.addAttribute("messages", messages);
         model.addAttribute("message", new Message());

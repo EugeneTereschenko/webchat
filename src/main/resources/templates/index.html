@@ -40,7 +40,7 @@
             <div class="col-md-1 custom-background-user">
             </div>
             <div class="col-md-1 custom-background">
-                <input type="text" id="message-user" th:field="*{user}" class="custom-input_message-user" readonly/>
+                <input type="text" id="message-user" th:value="${usermessage}" class="custom-input_message-user" readonly/>
             </div>
             <div class="col-md-4 custom-background">
                 <input type="text" id="message-message" th:field="*{message}" class="custom-input_message-width"/>

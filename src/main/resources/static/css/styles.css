@@ -1,0 +1,30 @@
+/* src/main/resources/static/css/styles.css */
+.custom-background {
+    background-color: lightblue;
+}
+
+.custom-background-message {
+    background-color: lightblue;
+    height: 450px;
+    width: 60%;
+    overflow-y: auto;
+}
+
+.custom-background-two-message {
+    width: 60%;
+    background-color: #0080ff;
+}
+
+.custom-background-user {
+    background-color: #00bfff;
+    width: 150px;
+}
+
+.custom-input_message-width {
+    width: 100%;
+}
+
+.custom-input_message-user {
+    background-color: lightblue;
+    border: none;
+}

@@ -26,12 +26,12 @@ function saveUsername() {
     setCookie("username", username, 7);
 }
 
-function loadUsername() {
+/*function loadUsername() {
     const username = getCookie("username");
     if (username) {
         document.getElementById("message-user").value = username;
     }
-}
+}*/
 
 function fetchMessages() {
     const token = localStorage.getItem('authToken');
@@ -48,12 +48,38 @@ function fetchMessages() {
             messagesContainer.innerHTML = '';
             data.forEach(message => {
                 const messageElement = document.createElement('li');
+                messageElement.className = 'list-group-item';
                 messageElement.innerHTML = `<p>${message.user}</p><p>${message.message}</p>`;
                 messagesContainer.appendChild(messageElement);
                 scrollToBottom();
             });
         })
         .catch(error => console.error('Error fetching messages:', error));
+    }
+}
+
+function fetchUsers() {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+        fetch('http://localhost:8080/users', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Fetched users:', data);
+            const usersContainer = document.querySelector('.custom-background-user ul');
+            usersContainer.innerHTML = '';
+            data.forEach(user => {
+                const userElement = document.createElement('li');
+                userElement.className = 'list-group-item';
+                userElement.innerHTML = `<p>${user}</p>`;
+                usersContainer.appendChild(userElement);
+            });
+        })
+        .catch(error => console.error('Error fetching users:', error));
     }
 }
 
@@ -100,7 +126,8 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 window.onload = function() {
-    loadUsername();
+    //loadUsername();
+    fetchUsers();
     scrollToBottom();
     setInterval(fetchMessages, 5000);
 }

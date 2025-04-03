@@ -1,4 +1,9 @@
 /* src/main/resources/static/css/styles.css */
+
+.custom-form {
+    margin-top: 100px;
+}
+
 .custom-background {
     background-color: lightblue;
 }

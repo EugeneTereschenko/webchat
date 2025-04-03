@@ -35,7 +35,7 @@ public class SecurityConfig {
                 .cors(withDefaults())
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
-                                .requestMatchers( "/css/**", "/js/**", "/api/singup/**", "/api/register/**", "/api/login/**", "/h2-console/**").permitAll()
+                                .requestMatchers( "/logout/**", "/login/**", "/singup/**", "/css/**", "/js/**", "/api/singup/**", "/api/login/**", "/h2-console/**").permitAll()
                                 .anyRequest().authenticated()
                 )
                 .sessionManagement(sessionManagement ->

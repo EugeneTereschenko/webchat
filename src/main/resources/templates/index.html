@@ -23,17 +23,17 @@
                     <a class="nav-link active" aria-current="page" href="#">Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Logout</a>
+                    <a class="nav-link" href="/logout">Logout</a>
                 </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         Dropdown
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Action</a></li>
-                        <li><a class="dropdown-item" href="#">Another action</a></li>
+                        <li><a class="dropdown-item" href="#">Profile</a></li>
+                        <li><a class="dropdown-item" href="#">Search User</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#">Something else here</a></li>
+                        <li><a class="dropdown-item" href="#">Search Chat</a></li>
                     </ul>
                 </li>
                 <li class="nav-item">
@@ -72,7 +72,7 @@
             <div class="col-md-1 custom-background">
                 <input type="text" id="message-user" th:value="${usermessage}" class="custom-input_message-user" readonly/>
             </div>
-            <div class="col-md-4 custom-background">
+            <div class="col-md-5 custom-background">
                 <input type="text" id="message-message" th:field="*{message}" class="custom-input_message-width"/>
             </div>
             <div class="col-md-1 custom-background">

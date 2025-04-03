@@ -10,8 +10,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-@Table(name = "\"user\"")
+
 @RequiredArgsConstructor
+@Table(name = "\"user\"")
 @Entity
 @Data
 public class User implements UserDetails {

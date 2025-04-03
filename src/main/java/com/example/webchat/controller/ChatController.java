@@ -4,16 +4,13 @@ import com.example.webchat.dto.MessageDTO;
 import com.example.webchat.model.Message;
 import com.example.webchat.model.User;
 import com.example.webchat.service.UserService;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -22,7 +19,7 @@ import java.util.List;
 public class ChatController {
 
     private final List<String> Users;
-    private final List<Message> messages;
+    private final List<MessageDTO> messagesDTO;
     private final UserService userService;
 
 
@@ -48,12 +45,13 @@ public class ChatController {
 
     //@PreAuthorize("userService.isAuthenticated()")
     @PostMapping(value = "/saveMessage")
-    public ResponseEntity<HashMap<String, String>> saveMessage(@Valid @RequestBody MessageDTO messageDTO) {
+    public ResponseEntity<HashMap<String, String>> saveMessage(@Valid @RequestBody com.example.webchat.dto.MessageDTO messageDTO) {
 
         String username = messageDTO.getUser();
         String messageContent = messageDTO.getMessage();
         System.out.println("Received message: " + username + " - " + messageContent);
-        messages.add(new Message(messageDTO.getUser(), messageDTO.getMessage()));
+        messagesDTO.add(new MessageDTO(messageDTO.getUser(), messageDTO.getMessage()));
+
 
         HashMap<String, String> response = new HashMap<>();
         response.put("message", "User logged in successfully");
@@ -64,8 +62,8 @@ public class ChatController {
     //@PreAuthorize("userService.isAuthenticated()")
     @GetMapping("/messages")
     @ResponseBody
-    public List<Message> getMessages() {
-        return messages;
+    public List<MessageDTO> getMessagesDTO() {
+        return messagesDTO;
     }
 
     @GetMapping("/users")

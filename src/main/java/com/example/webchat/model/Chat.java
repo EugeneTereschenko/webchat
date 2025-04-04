@@ -13,11 +13,9 @@ import java.util.List;
 public class Chat {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long chatID;
+    private Long id;
 
     @Column(name="chat_name", length = 255)
     private String chatName;
 
-    @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Message> messages;
 }

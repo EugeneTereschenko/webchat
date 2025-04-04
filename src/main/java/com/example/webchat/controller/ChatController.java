@@ -4,6 +4,7 @@ import com.example.webchat.dto.MessageDTO;
 import com.example.webchat.model.Message;
 import com.example.webchat.model.User;
 import com.example.webchat.service.UserService;
+import com.example.webchat.service.impl.ChatService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -21,6 +22,8 @@ public class ChatController {
     private final List<String> Users;
     private final List<MessageDTO> messagesDTO;
     private final UserService userService;
+
+    private final ChatService chatService;
 
 
     //@PreAuthorize("userService.isAuthenticated()")
@@ -53,6 +56,8 @@ public class ChatController {
         messagesDTO.add(new MessageDTO(messageDTO.getUser(), messageDTO.getMessage()));
 
 
+        chatService.addChatMessage("Test", messageDTO);
+
         HashMap<String, String> response = new HashMap<>();
         response.put("message", "User logged in successfully");
         response.put("success", "true");
@@ -81,6 +86,11 @@ public class ChatController {
     }
 
 
+    @GetMapping("/api/chat")
+    public ResponseEntity<List<Message>> getChatMessages(@RequestParam String chatName) {
+        List<Message> messages = chatService.getChatMessages(chatName);
+        return ResponseEntity.ok(messages);
+    }
 
 
 }

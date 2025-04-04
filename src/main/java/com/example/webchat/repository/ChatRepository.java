@@ -6,6 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ChatRepository extends JpaRepository<Chat, Long> {
-    // Custom query methods can be defined here if needed
-    // For example, to find chats by user ID or other criteria
+    Chat findByChatName(String chatName);
 }

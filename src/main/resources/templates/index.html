@@ -14,7 +14,8 @@
 <nav class="navbar navbar-expand-lg bg-body-tertiary">
     <div class="container-fluid">
         <a class="navbar-brand" href="#">Navbar</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -26,13 +27,16 @@
                     <a class="nav-link" href="/logout">Logout</a>
                 </li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                       aria-expanded="false">
                         Dropdown
                     </a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="#">Profile</a></li>
                         <li><a class="dropdown-item" href="#">Search User</a></li>
-                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
                         <li><a class="dropdown-item" href="#">Search Chat</a></li>
                     </ul>
                 </li>
@@ -47,6 +51,18 @@
         </div>
     </div>
 </nav>
+
+<form class="d-flex" role="chat">
+    <div class="input-group mb-3 custom-background-chat">
+        <input type="text" class="form-control" placeholder="Create chat" aria-label="Create chat" aria-describedby="button-addon2">
+        <button class="btn btn-outline-secondary" type="button" id="button-addon2">Add</button>
+    </div>
+</form>
+
+<div class="input-group mb-3 custom-background-chat-title">
+    <span class="input-group-text">chat</span>
+    <span class="input-group-text">id</span>
+</div>
 <form id="messageForm" class="custom-form" action="#" th:action="@{/saveMessage}" th:object="${message}" method="post">
     <div class="container">
         <div class="row">
@@ -70,7 +86,8 @@
             <div class="col-md-1 custom-background-user">
             </div>
             <div class="col-md-1 custom-background">
-                <input type="text" id="message-user" th:value="${usermessage}" class="custom-input_message-user" readonly/>
+                <input type="text" id="message-user" th:value="${usermessage}" class="custom-input_message-user"
+                       readonly/>
             </div>
             <div class="col-md-5 custom-background">
                 <input type="text" id="message-message" th:field="*{message}" class="custom-input_message-width"/>

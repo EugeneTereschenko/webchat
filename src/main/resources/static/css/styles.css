@@ -1,7 +1,23 @@
 /* src/main/resources/static/css/styles.css */
 
+.custom-background-chat {
+    margin-top: 60px;
+    margin-left: 20%;
+    margin-bottom: 2px;
+    width: 15%;
+    background-color: lightblue;
+}
+
+.custom-background-chat-title {
+    margin-top: 2px;
+    margin-left: 20%;
+    margin-bottom: 2px;
+}
+
 .custom-form {
-    margin-top: 100px;
+    margin-top: 2px;
+    margin-left: 20%;
+    width: 67%;
 }
 
 .custom-background {

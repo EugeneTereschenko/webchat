@@ -54,14 +54,14 @@
 
 <form class="d-flex" role="chat">
     <div class="input-group mb-3 custom-background-chat">
-        <input type="text" class="form-control" placeholder="Create chat" aria-label="Create chat" aria-describedby="button-addon2">
-        <button class="btn btn-outline-secondary" type="button" id="button-addon2">Add</button>
+        <input type="text" class="form-control" placeholder="Create chat" aria-label="Create chat" aria-describedby="button-custom-chat-create" id="chat-name">
+        <button class="btn btn-outline-secondary" type="button" id="button-custom-chat-create">Add</button>
     </div>
 </form>
 
 <div class="input-group mb-3 custom-background-chat-title">
     <span class="input-group-text">chat</span>
-    <span class="input-group-text">id</span>
+    <span class="input-group-text" id="chat-name-value">id</span>
 </div>
 <form id="messageForm" class="custom-form" action="#" th:action="@{/saveMessage}" th:object="${message}" method="post">
     <div class="container">

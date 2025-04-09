@@ -1,6 +1,8 @@
 package com.example.webchat.controller;
 
+import com.example.webchat.dto.MessageChatDTO;
 import com.example.webchat.dto.MessageDTO;
+import com.example.webchat.model.Chat;
 import com.example.webchat.model.Message;
 import com.example.webchat.model.User;
 import com.example.webchat.service.UserService;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 @AllArgsConstructor
 @Controller
@@ -56,7 +59,7 @@ public class ChatController {
         messagesDTO.add(new MessageDTO(messageDTO.getUser(), messageDTO.getMessage()));
 
 
-        chatService.addChatMessage("Test", messageDTO);
+        //chatService.addChatMessage("Test", messageDTO);
 
         HashMap<String, String> response = new HashMap<>();
         response.put("message", "User logged in successfully");
@@ -91,6 +94,22 @@ public class ChatController {
         List<Message> messages = chatService.getChatMessages(chatName);
         return ResponseEntity.ok(messages);
     }
+
+    @PostMapping("/api/chatAdd")
+    public ResponseEntity<Message> addChatMessage(@RequestBody MessageChatDTO messageChatDTO) {
+
+        System.out.println("Received messageDTO: " + messageChatDTO);
+
+        Optional<Message> savedMessage = chatService.addChatMessage(messageChatDTO);
+        return ResponseEntity.ok(savedMessage.get());
+    }
+
+    @PostMapping("/api/chatCreate")
+    public ResponseEntity<Chat> createChat(@RequestParam String name){
+        Optional<Chat> chat = chatService.saveChat(name);
+        return ResponseEntity.ok(chat.get());
+    }
+
 
 
 }

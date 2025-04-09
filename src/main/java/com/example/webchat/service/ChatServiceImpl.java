@@ -1,5 +1,6 @@
 package com.example.webchat.service;
 
+import com.example.webchat.dto.MessageChatDTO;
 import com.example.webchat.dto.MessageDTO;
 import com.example.webchat.model.Chat;
 import com.example.webchat.model.Message;
@@ -22,31 +23,41 @@ public class ChatServiceImpl implements ChatService  {
     private final MessageService messageService;
 
     public Optional<Chat> saveChat(String chatName) {
-        Chat chat = new Chat();
-        chat.setChatName(chatName);
-        chatRepository.save(chat);
-        return Optional.of(chat);
+
+        Optional<Chat> existingChat = chatRepository.findByChatName(chatName);
+        if (existingChat.isPresent()) {
+            log.info("Chat already exists: " + chatName);
+            return existingChat;
+        } else {
+            log.info("Creating new chat: " + chatName);
+            Chat chat = new Chat();
+            chat.setChatName(chatName);
+            chatRepository.save(chat);
+            return Optional.of(chat);
+        }
     }
 
     public List<Message> getChatMessages(String chatName) {
-        Chat chat = chatRepository.findByChatName(chatName);
-        return messageService.getMessagesByChatId(chat.getId());
+        Optional<Chat> chat = chatRepository.findByChatName(chatName);
+        return messageService.getMessagesByChatId(chat.get().getId());
     }
 
-    public void addChatMessage(String chatName, MessageDTO messageDTO) {
+    public Optional<Message> addChatMessage(MessageChatDTO messageChatDTO) {
+        Optional<Message> messageToSave = null;
         Message message = new Message();
-        message.setUser(messageDTO.getUser());
-        message.setMessage(messageDTO.getMessage());
-        Chat chat = Optional.ofNullable(chatRepository.findByChatName(chatName))
-                .orElseGet(() -> {
-                    log.error("Chat not found: " + chatName);
-                    Chat newChat = saveChat(chatName).get();
-                    messageService.saveMessage(newChat, message);
-                    return null;
-                });
+        message.setUser(messageChatDTO.getUser());
+        message.setMessage(messageChatDTO.getMessage());
+        Optional<Chat> chat = chatRepository.findByChatName(messageChatDTO.getChatName());
 
-        if (chat != null) {
-            messageService.saveMessage(chat, message);
+        if (chat.isPresent()) {
+            log.info("Chat found: " + messageChatDTO.getChatName());
+            messageToSave = messageService.saveMessage(chat.get(), message);
+        } else {
+            log.info("Chat not found: " + messageChatDTO.getChatName());
+            Chat newChat = saveChat(messageChatDTO.getChatName()).get();
+            messageToSave = messageService.saveMessage(newChat, message);
         }
+
+        return messageToSave;
     }
 }

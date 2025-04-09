@@ -18,4 +18,6 @@ public class Chat {
     @Column(name="chat_name", length = 255)
     private String chatName;
 
+    @Column(name="users", length = 255)
+    private List<String> users;
 }

@@ -1,7 +1,6 @@
 package com.example.webchat.service;
 
 import com.example.webchat.dto.MessageChatDTO;
-import com.example.webchat.dto.MessageDTO;
 import com.example.webchat.model.Chat;
 import com.example.webchat.model.Message;
 import com.example.webchat.repository.ChatRepository;
@@ -22,7 +21,7 @@ public class ChatServiceImpl implements ChatService  {
     private final ChatRepository chatRepository;
     private final MessageService messageService;
 
-    public Optional<Chat> saveChat(String chatName) {
+    public Optional<Chat> updateChat(String chatName) {
 
         Optional<Chat> existingChat = chatRepository.findByChatName(chatName);
         if (existingChat.isPresent()) {
@@ -37,8 +36,25 @@ public class ChatServiceImpl implements ChatService  {
         }
     }
 
+    public Optional<Chat> updateChat(Chat chat) {
+        Optional<Chat> existingChat = chatRepository.findByChatName(chat.getChatName());
+        if (existingChat.isPresent()) {
+            log.info("Chat already exists: " + chat.getChatName());
+            chatRepository.save(chat);
+            return existingChat;
+        } else {
+            log.info("exists such chat: " + chat.getChatName());
+            //chatRepository.save(chat);
+            return null;
+        }
+    }
+
     public List<Message> getChatMessages(String chatName) {
         Optional<Chat> chat = chatRepository.findByChatName(chatName);
+        if (chat.isEmpty()){
+            log.info("Chat not found: " + chatName);
+            return List.of();
+        }
         return messageService.getMessagesByChatId(chat.get().getId());
     }
 
@@ -54,10 +70,14 @@ public class ChatServiceImpl implements ChatService  {
             messageToSave = messageService.saveMessage(chat.get(), message);
         } else {
             log.info("Chat not found: " + messageChatDTO.getChatName());
-            Chat newChat = saveChat(messageChatDTO.getChatName()).get();
+            Chat newChat = updateChat(messageChatDTO.getChatName()).get();
             messageToSave = messageService.saveMessage(newChat, message);
         }
 
         return messageToSave;
+    }
+
+    public Optional<Chat> getChatByName(String chatName) {
+        return chatRepository.findByChatName(chatName);
     }
 }

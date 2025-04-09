@@ -89,10 +89,12 @@ function fetchChatMessages() {
     }
 }
 
-function fetchUsers() {
+
+function fetchUser(){
     const token = localStorage.getItem('authToken');
+    chatName = document.getElementById('chat-name').value;
     if (token) {
-        fetch('http://localhost:8080/users', {
+        fetch(`http://localhost:8080/api/user?chatName=${encodeURIComponent(chatName)}`, {
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer ' + token
@@ -100,19 +102,47 @@ function fetchUsers() {
         })
         .then(response => response.json())
         .then(data => {
-            console.log('Fetched users:', data);
+            console.log('Fetched user data:', data);
+
+            const userMessageElement = document.querySelector('#message-user');
+            userMessageElement.value = data.username;
+        })
+        .catch(error => console.error('Error fetching user data:', error));
+    } else {
+        console.error('No auth token found');
+    }
+}
+
+function fetchUsers() {
+    const token = localStorage.getItem('authToken');
+    chatName = document.getElementById('chat-name').value;
+    if (token) {
+        fetch(`http://localhost:8080/api/users?chatName=${encodeURIComponent(chatName)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Fetched user data:', data);
             const usersContainer = document.querySelector('.custom-background-user ul');
             usersContainer.innerHTML = '';
+
             data.forEach(user => {
                 const userElement = document.createElement('li');
                 userElement.className = 'list-group-item';
                 userElement.innerHTML = `<p>${user}</p>`;
                 usersContainer.appendChild(userElement);
             });
+
         })
-        .catch(error => console.error('Error fetching users:', error));
+        .catch(error => console.error('Error fetching user data:', error));
+    } else {
+        console.error('No auth token found');
     }
 }
+
 
 document.addEventListener('DOMContentLoaded', function () {
     const messageForm = document.querySelector('#messageForm');
@@ -122,45 +152,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const token = localStorage.getItem('authToken');
 
         if (token) {
-        /*
-            const messageData = {
-                user: document.getElementById('message-user').value,
-                message: document.getElementById('message-message').value
-            };
-            console.log('Message data:', messageData);
-            fetch('/saveMessage', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify(messageData)
-            })
-            .then(response => {
-                if (response.ok) {
-                    console.log('Message saved successfully');
-                    //return response.json();
-                } else {
-                    throw new Error('Failed to save message: ' + response.status);
-                }
-            })
-            .then(data => {
-                console.log('Message saved successfully', data);
-                // Optionally, refresh the messages or update the UI
-                //fetchMessages();
-            })
-            .catch(error => {
-                console.error('Error saving message', error);
-            });*/
-
-
             const messageChatData = {
                     user: document.getElementById('message-user').value,
                     message: document.getElementById('message-message').value,
                     chatName: document.getElementById('chat-name').value
             };
 
-            console.log('Message data:', messageChatData);
+            //console.log('Message data:', messageChatData);
             fetch('/api/chatAdd', {
                 method: 'POST',
                 headers: {
@@ -171,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .then(response => {
                 if (response.ok) {
-                console.log('Message saved successfully');
+                //console.log('Message saved successfully');
             //return response.json();
                 } else {
                     throw new Error('Failed to save message: ' + response.status);
@@ -215,6 +213,8 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(data => {
                 console.log('Success:', data);
                 document.getElementById('chat-name-value').textContent = data.chatName;
+                fetchUsers();
+                //fetchUser();
             })
             .catch((error) => {
                 console.error('Error:', error);
@@ -227,7 +227,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 window.onload = function() {
     //loadUsername();
-    fetchUsers();
+    //fetchUsers();
+    fetchUser();
     scrollToBottom();
     //setInterval(fetchMessages, 5000);
     setInterval(fetchChatMessages, 5000);

@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.Optional;
 
 @Slf4j
-@RequestMapping
 @RestController
 public class UserController {
 

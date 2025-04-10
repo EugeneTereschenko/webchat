@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
             password: password
         };
 
-        fetch('/api/singup', {
+        fetch('/chat/api/singup', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(response => response.json())
         .then(data => {
            // console.log('User registered successfully', data);
-            window.location.href = '/login';
+            window.location.href = 'login';
         })
         .catch(error => {
             console.error('Error registering user', error);

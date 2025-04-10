@@ -31,7 +31,7 @@ public class ChatController {
 
 
     //@PreAuthorize("userService.isAuthenticated()")
-    @GetMapping("/")
+    @GetMapping("/chat")
     public String home(Model model) {
 
         User user = userService.getAuthenticatedUser();

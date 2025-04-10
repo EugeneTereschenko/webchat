@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
             password: password
         };
 
-        fetch('/api/login', {
+        fetch('/chat/api/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 //window.location.href = 'http://localhost:8080/';
                 token = localStorage.getItem('authToken');
                  if (token) {
-                        fetch('http://localhost:8080/', {
+                        fetch('/chat', {
                             method: 'GET',
                             headers: {
                                 'Authorization': 'Bearer ' + token

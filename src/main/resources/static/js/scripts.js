@@ -62,7 +62,7 @@ function fetchChatMessages() {
     const token = localStorage.getItem('authToken'); // Retrieve the auth token
     chatName = document.getElementById('chat-name').value;
     if (token) {
-        fetch(`/api/chat?chatName=${encodeURIComponent(chatName)}`, {
+        fetch(`/chat/api/chat?chatName=${encodeURIComponent(chatName)}`, {
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer ' + token
@@ -94,7 +94,7 @@ function fetchUser(){
     const token = localStorage.getItem('authToken');
     chatName = document.getElementById('chat-name').value;
     if (token) {
-        fetch(`http://localhost:8080/api/user?chatName=${encodeURIComponent(chatName)}`, {
+        fetch(`/chat/api/user?chatName=${encodeURIComponent(chatName)}`, {
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer ' + token
@@ -117,7 +117,7 @@ function fetchUsers() {
     const token = localStorage.getItem('authToken');
     chatName = document.getElementById('chat-name').value;
     if (token) {
-        fetch(`http://localhost:8080/api/users?chatName=${encodeURIComponent(chatName)}`, {
+        fetch(`/chat/api/users?chatName=${encodeURIComponent(chatName)}`, {
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer ' + token
@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function () {
             };
 
             //console.log('Message data:', messageChatData);
-            fetch('/api/chatAdd', {
+            fetch('/chat/api/chatAdd', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const token = localStorage.getItem('authToken');
 
         if (token) {
-            fetch('http://localhost:8080/api/chatCreate', {
+            fetch('/chat/api/chatCreate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',

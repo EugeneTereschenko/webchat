@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Optional;
 
 @Slf4j
-@RequestMapping("/api")
+@RequestMapping
 @RestController
 public class UserController {
 
@@ -41,7 +41,7 @@ public class UserController {
     }
 
 
-    @PostMapping("/register")
+    @PostMapping("api/singup")
     public ResponseEntity<HashMap<String, String>> register(@Valid @RequestBody UserDTO userDTO) {
 
         User user = userService.registerUser(userDTO);
@@ -51,7 +51,7 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/login")
+    @PostMapping("api/login")
     public ResponseEntity<HashMap<String, String>> login(@Valid @RequestBody UserDTO userDTO) {
         // Perform login logic here
         // For example, check the username and password against the database

@@ -9,7 +9,8 @@ import lombok.ToString;
 @ToString
 @Getter
 @Setter
-public class MessageDTO {
+public class MessageChatDTO {
     private String user;
     private String message;
+    private String chatName;
 }

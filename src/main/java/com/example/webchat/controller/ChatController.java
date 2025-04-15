@@ -24,10 +24,8 @@ import java.util.Optional;
 @Controller
 public class ChatController {
 
-    //private final List<MessageDTO> messagesDTO;
     private final UserService userService;
     private final ChatService chatService;
-    //private final ChatRepository chatRepository;
 
 
     //@PreAuthorize("userService.isAuthenticated()")
@@ -43,27 +41,6 @@ public class ChatController {
         return "index";
     }
 
-    //@PreAuthorize("userService.isAuthenticated()")
-/*    @PostMapping(value = "/saveMessage")
-    public ResponseEntity<HashMap<String, String>> saveMessage(@Valid @RequestBody com.example.webchat.dto.MessageDTO messageDTO) {
-
-        String username = messageDTO.getUser();
-        String messageContent = messageDTO.getMessage();
-        System.out.println("Received message: " + username + " - " + messageContent);
-        messagesDTO.add(new MessageDTO(messageDTO.getUser(), messageDTO.getMessage()));
-
-        HashMap<String, String> response = new HashMap<>();
-        response.put("message", "User logged in successfully");
-        response.put("success", "true");
-        return ResponseEntity.ok(response);
-    }*/
-
-    //@PreAuthorize("userService.isAuthenticated()")
-/*    @GetMapping("/messages")
-    @ResponseBody
-    public List<MessageDTO> getMessagesDTO() {
-        return messagesDTO;
-    }*/
 
     @GetMapping("/api/users")
     @ResponseBody

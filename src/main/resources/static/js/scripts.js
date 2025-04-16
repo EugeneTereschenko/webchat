@@ -26,8 +26,6 @@ function saveUsername() {
     setCookie("username", username, 7);
 }
 
-
-
 function fetchChatMessages() {
     const token = localStorage.getItem('authToken'); // Retrieve the auth token
     chatName = document.getElementById('chat-name').value;
@@ -113,95 +111,6 @@ function fetchUsers() {
     }
 }
 
-
-document.addEventListener('DOMContentLoaded', function () {
-    const messageForm = document.querySelector('#messageForm');
-    messageForm.addEventListener('submit', function (event) {
-        event.preventDefault();
-
-        const token = localStorage.getItem('authToken');
-        chatName = document.getElementById('chat-name').value
-        if (!chatName) {
-            const modal = new bootstrap.Modal(document.getElementById('messageModal'));
-            modal.show();
-            return;
-        }
-
-        if (token) {
-            const messageChatData = {
-                    user: document.getElementById('message-user').value,
-                    message: document.getElementById('message-message').value,
-                    chatName: document.getElementById('chat-name').value
-            };
-
-            //console.log('Message data:', messageChatData);
-            fetch('/chat/api/chatAdd', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify(messageChatData)
-            })
-            .then(response => {
-                if (response.ok) {
-                //console.log('Message saved successfully');
-            //return response.json();
-                } else {
-                    throw new Error('Failed to save message: ' + response.status);
-                }
-            })
-            .then(data => {
-            console.log('Message saved successfully', data);
-            // Optionally, refresh the messages or update the UI
-            //fetchMessages();
-            fetchChatMessages();
-            })
-            .catch(error => {
-                console.error('Error saving message', error);
-            });
-
-        } else {
-            console.error('No auth token found');
-        }
-    });
-});
-
-
-
-document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('button-custom-chat-create').addEventListener('click', function() {
-        const chatName = document.getElementById('chat-name').value;
-        const token = localStorage.getItem('authToken');
-
-        if (token) {
-            fetch('/chat/api/chatCreate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: new URLSearchParams({
-                    'name': chatName
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Success:', data);
-                document.getElementById('chat-name-value').textContent = data.chatName;
-                fetchUsers();
-                //fetchUser();
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
-        } else {
-            console.error('No auth token found');
-        }
-    });
-});
-
-
 function loadProfile() {
     const panel = document.getElementById('panel');
     const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
@@ -278,7 +187,7 @@ function createNavbar() {
 
     // Add nav items
     const navItems = [
-        { text: 'Home', href: '#', className: 'nav-link active', ariaCurrent: 'page' },
+        { text: 'Home', href: '#', id: 'home-button', className: 'nav-link active', ariaCurrent: 'page' },
         { text: 'Logout', href: 'logout', className: 'nav-link' },
     ];
 
@@ -293,6 +202,10 @@ function createNavbar() {
 
         if (item.ariaCurrent) {
             a.setAttribute('aria-current', item.ariaCurrent);
+        }
+
+        if(item.id) {
+            a.id = item.id;
         }
 
         li.appendChild(a);
@@ -390,7 +303,7 @@ function createNavbar() {
     document.body.appendChild(nav);
 }
 
-
+/*
 document.addEventListener('DOMContentLoaded', function () {
     const profileLink = document.getElementById('profile-link');
 
@@ -400,6 +313,7 @@ document.addEventListener('DOMContentLoaded', function () {
         console.error('Element with id "profile-link" not found in the DOM.');
     }
 });
+*/
 
 document.addEventListener('click', function (event) {
     console.log("Event target:", event.target);
@@ -414,8 +328,129 @@ document.addEventListener('click', function (event) {
         // Add your logic here, e.g., navigate to another page
         // window.location.href = '/card';
     }
+    const chatCreate = event.target.closest('#button-custom-chat-create');
+    if (chatCreate) {
+        event.preventDefault(); // Prevent default behavior
+        console.log('Chat create button clicked');
+        // Add your logic here, e.g., navigate to another page
+        // window.location.href = '/card';
+        createChat();
+        fetchUsers();
+        fetchUser();
+    }
+    const messageAdd = event.target.closest('#button_send_message');
+    if (messageAdd) {
+    event.preventDefault(); // Prevent default behavior
+        console.log('Message add button clicked');
+        // Add your logic here, e.g., navigate to another page
+        // window.location.href = '/card';
+        addMessageToChat();
+    }
+
+    const profileLink = event.target.closest('#profile-link');
+    if (profileLink) {
+        event.preventDefault(); // Prevent default behavior
+        console.log('Profile link clicked');
+        clearPanel();
+        loadProfile();
+        // Add your logic here, e.g., fetching profile data or navigating
+    }
+
+    const homeButton = event.target.closest('#home-button');
+    if (homeButton) {
+        event.preventDefault(); // Prevent default behavior
+        console.log('Home button clicked');
+        clearPanel();
+        getChat();
+        // Add your logic here, e.g., navigating to the home page
+    }
+    const profileInfo = event.target.closest('#profile-info');
+    if (profileInfo) {
+        event.preventDefault(); // Prevent default behavior
+        console.log('Profile info clicked');
+        clearPanel();
+        loadProfile();
+        // Add your logic here, e.g., navigating to the profile information page
+    }
 });
 
+
+function addMessageToChat() {
+        const token = localStorage.getItem('authToken');
+        chatName = document.getElementById('chat-name').value
+        if (!chatName) {
+            const modal = new bootstrap.Modal(document.getElementById('messageModal'));
+            modal.show();
+            return;
+        }
+
+        if (token) {
+            const messageChatData = {
+                    user: document.getElementById('message-user').value,
+                    message: document.getElementById('message-message').value,
+                    chatName: document.getElementById('chat-name').value
+            };
+
+            //console.log('Message data:', messageChatData);
+            fetch('/chat/api/chatAdd', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify(messageChatData)
+            })
+            .then(response => {
+                if (response.ok) {
+                //console.log('Message saved successfully');
+            //return response.json();
+                } else {
+                    throw new Error('Failed to save message: ' + response.status);
+                }
+            })
+            .then(data => {
+            console.log('Message saved successfully', data);
+            // Optionally, refresh the messages or update the UI
+            //fetchMessages();
+            fetchChatMessages();
+            })
+            .catch(error => {
+                console.error('Error saving message', error);
+            });
+
+        } else {
+            console.error('No auth token found');
+        }
+}
+
+function createChat(){
+        const chatName = document.getElementById('chat-name').value;
+        const token = localStorage.getItem('authToken');
+
+        if (token) {
+            fetch('/chat/api/chatCreate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: new URLSearchParams({
+                    'name': chatName
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                document.getElementById('chat-name-value').textContent = data.chatName;
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        } else {
+            console.error('No auth token found');
+        }
+}
+/*
 function handleProfileLinkClick(event) {
     event.preventDefault(); // Prevent default navigation
     console.log("Profile link clicked");
@@ -423,6 +458,7 @@ function handleProfileLinkClick(event) {
     loadProfile();
     // Add your logic here, e.g., fetching profile data or navigating
 }
+*/
 
 
 function clearPanel() {
@@ -472,13 +508,40 @@ async function fetchCard() {
     }
 }
 
+async function getChat() {
+    const token = localStorage.getItem('authToken'); // Retrieve the auth token from local storage
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/chat', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const chatHtml = await response.text(); // Assuming the response is HTML content
+        const panel = document.getElementById('panel');
+        if (panel) {
+            panel.innerHTML = chatHtml; // Update the panel with the chat content
+            scrollToBottom();
+        } else {
+            console.error('Element with id "panel" not found.');
+        }
+    } catch (error) {
+        console.error('Error fetching chat data:', error);
+    }
+}
 
 window.onload = function() {
-    //loadUsername();
-    //fetchUsers();
-    fetchUser();
-    scrollToBottom();
-    //loadNavPanel();
-    //setInterval(fetchMessages, 5000);
+    getChat();
     setInterval(fetchChatMessages, 5000);
 }

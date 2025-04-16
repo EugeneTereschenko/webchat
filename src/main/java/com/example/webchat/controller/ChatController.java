@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.validation.Valid;
 import java.util.ArrayList;
@@ -29,18 +30,27 @@ public class ChatController {
 
 
     //@PreAuthorize("userService.isAuthenticated()")
-    @GetMapping("/chat")
+    @GetMapping("/")
     public String home(Model model) {
 
         User user = userService.getAuthenticatedUser();
         if (user == null) {
             System.out.println("User is not authenticated");
-            return "redirect:/api/login"; // Redirect to login page if user is not authenticated
+            return "redirect:/login"; // Redirect to login page if user is not authenticated
         }
 
         return "index";
     }
 
+
+    @GetMapping("/chat")
+    public ModelAndView getChat() {
+        // Perform login logic here
+        // For example, you can save the username in the session or perform authentication
+
+        log.info("Login attempt for user: get chat ");
+        return new ModelAndView("chat");
+    }
 
     @GetMapping("/api/users")
     @ResponseBody

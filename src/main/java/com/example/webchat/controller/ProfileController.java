@@ -24,7 +24,7 @@ public class ProfileController {
         // Perform login logic here
         // For example, you can save the username in the session or perform authentication
 
-        profileService.
+        //profileService.
         HashMap<String, String> response = new HashMap<>();
         response.put("message", "User logged in successfully");
         response.put("success", "true");

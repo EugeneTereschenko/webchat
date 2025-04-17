@@ -4,6 +4,7 @@ import com.example.webchat.dto.MessageChatDTO;
 import com.example.webchat.model.Chat;
 import com.example.webchat.model.Message;
 import com.example.webchat.model.User;
+import com.example.webchat.service.ImageService;
 import com.example.webchat.service.UserService;
 import com.example.webchat.service.impl.ChatService;
 import lombok.AllArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.validation.Valid;

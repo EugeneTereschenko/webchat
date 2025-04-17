@@ -52,6 +52,13 @@ public class UserController {
     @PostMapping("api/singup")
     public ResponseEntity<HashMap<String, String>> register(@Valid @RequestBody UserDTO userDTO) {
 
+        User existingUser = userService.getUserByEmail(userDTO.getEmail());
+        if (existingUser != null) {
+            HashMap<String, String> response = new HashMap<>();
+            response.put("message", "User with this email already exists");
+            return ResponseEntity.badRequest().body(response);
+        }
+
         User user = userService.registerUser(userDTO);
         log.info("Registering user: " + user.toString());
         HashMap<String, String> response = new HashMap<>();
@@ -68,7 +75,7 @@ public class UserController {
         if (user == null) {
             response.put("message", "Access denied");
             response.put("success", "false");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.badRequest().body(response);
         }
         log.info("request for User controller. login: " + userDTO.getPassword() + " " + userDTO.getUsername());
         String token = userService.authenticateUser(Optional.ofNullable(user.getUsername()).orElse(userDTO.getUsername()), userDTO.getPassword());

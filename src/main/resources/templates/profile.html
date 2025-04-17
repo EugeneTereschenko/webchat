@@ -27,8 +27,9 @@
                 </div>
                 <div class="text-center">
                     <div class="position-relative d-inline-block">
-                        <img src="https://randomuser.me/api/portraits/men/40.jpg" class="rounded-circle profile-pic" alt="Profile Picture">
-                        <button class="btn btn-primary btn-sm position-absolute bottom-0 end-0 rounded-circle">
+                        <!-- <img src="https://randomuser.me/api/portraits/men/40.jpg" class="rounded-circle profile-pic" alt="Profile Picture"> -->
+                        <img id="profile-picture" class="rounded-circle profile-pic" alt="Profile Picture">
+                        <button class="btn btn-primary btn-sm position-absolute bottom-0 end-0 rounded-circle" id="change-pic">
                             <i class="fas fa-camera"></i>
                         </button>
                     </div>
@@ -148,6 +149,24 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" tabindex="-1" id="imageModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Input image</p>
+                <input type="file" id="file-input" accept="image/*">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>

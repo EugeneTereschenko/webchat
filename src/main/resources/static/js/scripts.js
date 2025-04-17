@@ -141,9 +141,43 @@ function loadProfile() {
     })
     .then(html => {
         panel.innerHTML = html; // Inject the HTML content into the #panel element
+        getImage();
     })
     .catch(error => {
         console.error('Error loading profile.html:', error);
+    });
+}
+
+function getImage() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    fetch('/chat/getImage', {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status}`);
+        }
+        return response.blob(); // Parse the response as a blob
+    })
+    .then(blob => {
+        const profilePicture = document.getElementById('profile-picture');
+        if (profilePicture) {
+            profilePicture.src = URL.createObjectURL(blob); // Set the image source to the blob URL
+        } else {
+            console.error('Element with id "profile-picture" not found.');
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching image:', error);
     });
 }
 
@@ -303,76 +337,98 @@ function createNavbar() {
     document.body.appendChild(nav);
 }
 
-/*
-document.addEventListener('DOMContentLoaded', function () {
-    const profileLink = document.getElementById('profile-link');
-
-    if (profileLink) {
-        profileLink.addEventListener('click', handleProfileLinkClick);
-    } else {
-        console.error('Element with id "profile-link" not found in the DOM.');
-    }
-});
-*/
-
 document.addEventListener('click', function (event) {
     console.log("Event target:", event.target);
 
-    // Check if the clicked element or its parent has the id 'edit-profile'
     const editProfileElement = event.target.closest('#edit-profile');
     if (editProfileElement) {
-        event.preventDefault(); // Prevent default behavior
-        console.log('Edit profile button clicked');
+        event.preventDefault();
         clearProfileContent();
         fetchCard();
-        // Add your logic here, e.g., navigate to another page
-        // window.location.href = '/card';
     }
     const chatCreate = event.target.closest('#button-custom-chat-create');
     if (chatCreate) {
-        event.preventDefault(); // Prevent default behavior
-        console.log('Chat create button clicked');
-        // Add your logic here, e.g., navigate to another page
-        // window.location.href = '/card';
+        event.preventDefault();
         createChat();
         fetchUsers();
         fetchUser();
     }
     const messageAdd = event.target.closest('#button_send_message');
     if (messageAdd) {
-    event.preventDefault(); // Prevent default behavior
-        console.log('Message add button clicked');
-        // Add your logic here, e.g., navigate to another page
-        // window.location.href = '/card';
+        event.preventDefault();
         addMessageToChat();
     }
 
     const profileLink = event.target.closest('#profile-link');
     if (profileLink) {
-        event.preventDefault(); // Prevent default behavior
-        console.log('Profile link clicked');
+        event.preventDefault();
         clearPanel();
         loadProfile();
-        // Add your logic here, e.g., fetching profile data or navigating
     }
 
     const homeButton = event.target.closest('#home-button');
     if (homeButton) {
-        event.preventDefault(); // Prevent default behavior
-        console.log('Home button clicked');
+        event.preventDefault();
         clearPanel();
         getChat();
-        // Add your logic here, e.g., navigating to the home page
     }
     const profileInfo = event.target.closest('#profile-info');
     if (profileInfo) {
-        event.preventDefault(); // Prevent default behavior
-        console.log('Profile info clicked');
+        event.preventDefault();
         clearPanel();
         loadProfile();
-        // Add your logic here, e.g., navigating to the profile information page
+    }
+    const checkoutFormButton = event.target.closest('#checkoutFormButton');
+    if (checkoutFormButton) {
+        event.preventDefault();
+        sendProfile();
+    }
+    const changePhoto = event.target.closest('#change-pic');
+    if (changePhoto) {
+        event.preventDefault();
+        addPhoto();
+        clearPanel();
+        loadProfile();
     }
 });
+
+function addPhoto() {
+    const token = localStorage.getItem('authToken');
+    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+    modal.show();
+
+
+    const fileInput = document.getElementById('file-input');
+    fileInput.addEventListener('change', function () {
+        const file = fileInput.files[0];
+
+        if (token && file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/chat/upload', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('File uploaded successfully');
+                    //loadProfile(); // Optionally refresh the profile or update the UI
+                } else {
+                    throw new Error('Failed to upload file: ' + response.status);
+                }
+            })
+            .catch(error => {
+                console.error('Error uploading file', error);
+            });
+        } else {
+            console.error('No auth token found or no file selected');
+        }
+    }, { once: true }); // Ensure the event listener is added only once
+}
 
 
 function addMessageToChat() {
@@ -450,15 +506,67 @@ function createChat(){
             console.error('No auth token found');
         }
 }
-/*
-function handleProfileLinkClick(event) {
-    event.preventDefault(); // Prevent default navigation
-    console.log("Profile link clicked");
-    clearPanel();
-    loadProfile();
-    // Add your logic here, e.g., fetching profile data or navigating
+
+function sendProfile() {
+
+    let cardType = '';
+    let debtCard = document.getElementById('checkoutForm3');
+    let type2Card = document.getElementById('checkoutForm4');
+    let type3Card = document.getElementById('checkoutForm5');
+
+    if (debtCard && debtCard.checked) {
+        cardType = 'credit';
+    }
+    if (type2Card && type2Card.checked) {
+        cardType = 'debt';
+    }
+    if (type3Card && type3Card.checked) {
+        cardType = 'virtual';
+    }
+
+    console.log('Selected card type:', cardType);
+
+    const profileData = {
+        firstName: document.getElementById('form6Example1').value,
+        lastName: document.getElementById('form6Example2').value,
+        address: document.getElementById('form6Example4').value,
+        phoneNumber: document.getElementById('form6Example6').value,
+        cardType: cardType,
+        nameOfCard: document.getElementById('formNameOnCard').value,
+        cardNumber: document.getElementById('formCardNumber').value,
+        cardExpiryDate: document.getElementById('formExpiration').value,
+        cvv: document.getElementById('formCVV').value,
+    }
+
+    console.log('Profile data:', profileData);
+
+    const token = localStorage.getItem('authToken');
+
+    fetch('/chat/profile', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+        },
+            body: JSON.stringify(profileData)
+        })
+        .then(response => {
+        if (response.ok) {
+                    //console.log('Message saved successfully');
+                //return response.json();
+        } else {
+            throw new Error('Failed to save profile: ' + response.status);
+        }
+        })
+        .then(data => {
+        console.log('Profile saved successfully', data);
+                // Optionally, refresh the messages or update the UI
+
+        })
+        .catch(error => {
+            console.error('Error saving profile', error);
+        });
 }
-*/
 
 
 function clearPanel() {

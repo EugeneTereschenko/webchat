@@ -25,12 +25,12 @@ public class ProfileDTO {
 
     private String cardType;
 
-    private String NameOfCard;
+    private String nameOfCard;
 
-    private String CardNumber;
+    private String cardNumber;
 
-    private String CardExpiryDate;
+    private String cardExpiryDate;
 
-    private String CVV;
+    private String cvv;
 
 }

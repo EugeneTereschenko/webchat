@@ -44,15 +44,15 @@ public class Profile {
     private String cardType;
 
     @Column(name = "name_of_card", length = 255)
-    private String NameOfCard;
+    private String nameOfCard;
 
     @Column(name = "card_number", length = 255)
-    private String CardNumber;
+    private String cardNumber;
 
     @Column(name = "expiration_date", length = 255)
-    private String CardExpiryDate;
+    private String cardExpiryDate;
 
     @Column(name = "cvv", length = 255)
-    private String CVV;
+    private String cvv;
 
 }

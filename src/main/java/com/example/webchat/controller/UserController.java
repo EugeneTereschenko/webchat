@@ -40,8 +40,16 @@ public class UserController {
     }
 
 
+
     @PostMapping("api/singup")
     public ResponseEntity<HashMap<String, String>> register(@Valid @RequestBody UserDTO userDTO) {
+
+        User existingUser = userService.getUserByEmail(userDTO.getEmail());
+        if (existingUser != null) {
+            HashMap<String, String> response = new HashMap<>();
+            response.put("message", "User with this email already exists");
+            return ResponseEntity.badRequest().body(response);
+        }
 
         User user = userService.registerUser(userDTO);
         log.info("Registering user: " + user.toString());
@@ -54,12 +62,17 @@ public class UserController {
     public ResponseEntity<HashMap<String, String>> login(@Valid @RequestBody UserDTO userDTO) {
         // Perform login logic here
         // For example, check the username and password against the database
+        HashMap<String, String> response = new HashMap<>();
         User user = userService.getUserByEmail(userDTO.getEmail());
+        if (user == null) {
+            response.put("message", "Access denied");
+            response.put("success", "false");
+            return ResponseEntity.badRequest().body(response);
+        }
         log.info("request for User controller. login: " + userDTO.getPassword() + " " + userDTO.getUsername());
         String token = userService.authenticateUser(Optional.ofNullable(user.getUsername()).orElse(userDTO.getUsername()), userDTO.getPassword());
         log.info("token: " + token);
         log.info("Login attempt for user: " + userDTO.toString());
-        HashMap<String, String> response = new HashMap<>();
         response.put("token", token);
         response.put("userID", String.valueOf(user.getUserID()));
         response.put("message", "User logged in successfully");

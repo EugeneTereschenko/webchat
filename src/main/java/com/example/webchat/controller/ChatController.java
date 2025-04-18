@@ -4,6 +4,7 @@ import com.example.webchat.dto.MessageChatDTO;
 import com.example.webchat.model.Chat;
 import com.example.webchat.model.Message;
 import com.example.webchat.model.User;
+import com.example.webchat.service.ImageService;
 import com.example.webchat.service.UserService;
 import com.example.webchat.service.impl.ChatService;
 import lombok.AllArgsConstructor;
@@ -12,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.validation.Valid;
 import java.util.ArrayList;
@@ -24,46 +27,32 @@ import java.util.Optional;
 @Controller
 public class ChatController {
 
-    //private final List<MessageDTO> messagesDTO;
     private final UserService userService;
     private final ChatService chatService;
-    //private final ChatRepository chatRepository;
 
 
     //@PreAuthorize("userService.isAuthenticated()")
-    @GetMapping("/chat")
+    @GetMapping("/")
     public String home(Model model) {
 
         User user = userService.getAuthenticatedUser();
         if (user == null) {
             System.out.println("User is not authenticated");
-            return "redirect:/api/login"; // Redirect to login page if user is not authenticated
+            return "redirect:/login"; // Redirect to login page if user is not authenticated
         }
 
         return "index";
     }
 
-    //@PreAuthorize("userService.isAuthenticated()")
-/*    @PostMapping(value = "/saveMessage")
-    public ResponseEntity<HashMap<String, String>> saveMessage(@Valid @RequestBody com.example.webchat.dto.MessageDTO messageDTO) {
 
-        String username = messageDTO.getUser();
-        String messageContent = messageDTO.getMessage();
-        System.out.println("Received message: " + username + " - " + messageContent);
-        messagesDTO.add(new MessageDTO(messageDTO.getUser(), messageDTO.getMessage()));
+    @GetMapping("/chat")
+    public ModelAndView getChat() {
+        // Perform login logic here
+        // For example, you can save the username in the session or perform authentication
 
-        HashMap<String, String> response = new HashMap<>();
-        response.put("message", "User logged in successfully");
-        response.put("success", "true");
-        return ResponseEntity.ok(response);
-    }*/
-
-    //@PreAuthorize("userService.isAuthenticated()")
-/*    @GetMapping("/messages")
-    @ResponseBody
-    public List<MessageDTO> getMessagesDTO() {
-        return messagesDTO;
-    }*/
+        log.info("Login attempt for user: get chat ");
+        return new ModelAndView("chat");
+    }
 
     @GetMapping("/api/users")
     @ResponseBody

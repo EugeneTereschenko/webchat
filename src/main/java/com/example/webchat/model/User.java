@@ -33,10 +33,6 @@ public class User implements UserDetails {
     private boolean isActive;
     @ManyToMany(fetch = FetchType.EAGER)
     private Collection<Role> roles = new ArrayList<>();
-    @Column(name = "staff", length = 255)
-    private String staff;
-    @Column(name = "bio", length = 255)
-    private String bio;
 
 
     @Override

@@ -39,14 +39,6 @@ public class UserController {
         return new ModelAndView("singup");
     }
 
-    @GetMapping("/profile")
-    public ModelAndView profile() {
-        // Perform login logic here
-        // For example, you can save the username in the session or perform authentication
-
-        log.info("Login attempt for user: ");
-        return new ModelAndView("profile");
-    }
 
 
     @PostMapping("api/singup")

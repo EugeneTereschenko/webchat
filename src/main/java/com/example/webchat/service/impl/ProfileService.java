@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface ProfileService {
     void saveProfile(ProfileDTO profileDTO);
     Optional<Profile> createProfile(ProfileDTO profileDTO);
+    Optional<ProfileDTO> getProfileByUserId(Long userId);
 }

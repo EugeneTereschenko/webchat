@@ -1,7 +1,11 @@
 package com.example.webchat.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@AllArgsConstructor
+@NoArgsConstructor
 @Data
 public class ProfileDTO {
 
@@ -20,8 +24,6 @@ public class ProfileDTO {
     private String staff;
 
     private String bio;
-
-    private String profilePicture;
 
     private String cardType;
 

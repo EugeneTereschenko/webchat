@@ -1,4 +1,5 @@
 package com.example.webchat.service;
+import com.example.webchat.exception.ImageNotFoundException;
 import com.example.webchat.model.Image;
 import com.example.webchat.repository.ImageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,11 +24,11 @@ public class ImageService {
     }
 
     public Image getImage(Long id) {
-        return imageRepository.findById(id).orElse(null);
+        return imageRepository.findById(id).orElseThrow(() -> new ImageNotFoundException("Image not found"));
     }
 
     public Image getImageByUserId(Long userId) {
         Optional<Image> image = imageRepository.findByUserId(userId);
-        return image.orElse(null);
+        return image.orElseThrow(() -> new ImageNotFoundException("Image not found"));
     }
 }

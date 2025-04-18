@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.validation.Valid;
 import java.util.HashMap;
@@ -31,8 +32,6 @@ public class ProfileController {
 
     @PostMapping("/profile")
     public ResponseEntity<HashMap<String, String>> profile(@Valid @RequestBody ProfileDTO profileDTO) {
-        // Perform login logic here
-        // For example, you can save the username in the session or perform authentication
         log.info("Profile " + profileDTO.toString());
         Optional<Profile> profile = profileService.createProfile(profileDTO);
         HashMap<String, String> response = new HashMap<>();
@@ -45,6 +44,24 @@ public class ProfileController {
         response.put("message", "Profile created successfully");
         response.put("success", "true");
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("api/profile")
+    public ResponseEntity<ProfileDTO> getProfile() {
+        try {
+            User user = userService.getAuthenticatedUser();
+            Optional<ProfileDTO> profileDTO = profileService.getProfileByUserId(user.getUserID());
+            profileDTO.get().setUsername(user.getUsername());
+            log.info("Get profile " + profileDTO.get().toString());
+            if (profileDTO.isPresent()) {
+                return ResponseEntity.ok(profileDTO.get());
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            log.info(e + "exception get profile");
+            return ResponseEntity.status(500).body(null);
+        }
     }
 
 
@@ -71,5 +88,14 @@ public class ProfileController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body(null);
         }
+    }
+
+    @GetMapping("/profile")
+    public ModelAndView profile() {
+        // Perform login logic here
+        // For example, you can save the username in the session or perform authentication
+
+        log.info("Login attempt for user: ");
+        return new ModelAndView("profile");
     }
 }

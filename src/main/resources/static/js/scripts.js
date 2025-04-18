@@ -111,6 +111,49 @@ function fetchUsers() {
     }
 }
 
+
+function loadProfileData() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    fetch('/chat/api/profile', {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+        }
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json(); // Parse the response as JSON
+        } else {
+            throw new Error(`Failed to load profile data: ${response.status}`);
+        }
+    })
+    .then(data => {
+        console.log('Profile data:', data);
+            const userNameElement = document.getElementById('profile-user-name');
+            const firstNameElement = document.getElementById('profile-firstName');
+            const lastNameElement = document.getElementById('profile-lastName');
+            const emailElement = document.getElementById('profile-email');
+            const phoneNumberElement = document.getElementById('profile-phone');
+            const bioElement = document.getElementById('profile-bio');
+
+            if (userNameElement) userNameElement.textContent = data.username;
+            if (firstNameElement) firstNameElement.value = data.firstName;
+            if (lastNameElement) lastNameElement.value = data.lastName;
+            if (emailElement) emailElement.value = data.email;
+            if (phoneNumberElement) phoneNumberElement.value = data.phoneNumber;
+            if (bioElement) bioElement.value = data.bio;
+    })
+    .catch(error => {
+        console.error('Error loading profile data:', error);
+    });
+}
+
 function loadProfile() {
     const panel = document.getElementById('panel');
     const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
@@ -150,6 +193,11 @@ function loadProfile() {
 
 function getImage() {
     const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+/*    const profilePicture = document.getElementById('profile-picture');
+
+    if (profilePicture) {
+        profilePicture.class = 'https://randomuser.me/api/portraits/men/40.jpg';
+    }*/
 
     if (!token) {
         console.error('No Bearer token found in localStorage');
@@ -171,7 +219,8 @@ function getImage() {
     .then(blob => {
         const profilePicture = document.getElementById('profile-picture');
         if (profilePicture) {
-            profilePicture.src = URL.createObjectURL(blob); // Set the image source to the blob URL
+            profilePicture.src = URL.createObjectURL(blob);// Set the image source to the blob URL
+            loadProfileData();
         } else {
             console.error('Element with id "profile-picture" not found.');
         }
@@ -364,6 +413,7 @@ document.addEventListener('click', function (event) {
         event.preventDefault();
         clearPanel();
         loadProfile();
+        loadProfileData();
     }
 
     const homeButton = event.target.closest('#home-button');
@@ -377,6 +427,7 @@ document.addEventListener('click', function (event) {
         event.preventDefault();
         clearPanel();
         loadProfile();
+        loadProfileData();
     }
     const checkoutFormButton = event.target.closest('#checkoutFormButton');
     if (checkoutFormButton) {
@@ -389,6 +440,7 @@ document.addEventListener('click', function (event) {
         addPhoto();
         clearPanel();
         loadProfile();
+        loadProfileData();
     }
 });
 
@@ -498,6 +550,7 @@ function createChat(){
             .then(data => {
                 console.log('Success:', data);
                 document.getElementById('chat-name-value').textContent = data.chatName;
+                setInterval(fetchChatMessages, 5000);
             })
             .catch((error) => {
                 console.error('Error:', error);
@@ -651,5 +704,4 @@ async function getChat() {
 
 window.onload = function() {
     getChat();
-    setInterval(fetchChatMessages, 5000);
 }

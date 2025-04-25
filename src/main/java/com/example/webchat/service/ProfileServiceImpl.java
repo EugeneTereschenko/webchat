@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -35,6 +36,23 @@ public class ProfileServiceImpl implements ProfileService {
                 .cardExpiryDate(Optional.ofNullable(profileDTO.getCardExpiryDate()).orElse("12/25"))
                 .cvv(Optional.ofNullable(profileDTO.getCvv()).orElse("123"))
                 .build();
+        profileRepository.save(profile);
+    }
+
+    public void updateProfile(ProfileDTO profileDTO) {
+
+        User user = userService.getAuthenticatedUser();
+
+        List<Profile> profiles = profileRepository.findAllByUserId(user.getUserID());
+        if (profiles.isEmpty()) {
+            throw new ProfileNotValueException("Profile not found for userId: " + user.getUserID());
+        }
+        Profile profile = profiles.get(profiles.size() - 1);
+        if (profile == null) {
+            throw new ProfileNotValueException("Profile not found for userId: " + user.getUserID());
+        }
+        profile.setBio(profileDTO.getBio());
+        profile.setStaff(profileDTO.getStaff());
         profileRepository.save(profile);
     }
 
@@ -65,7 +83,11 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
     public Optional<ProfileDTO> getProfileByUserId(Long userId) {
-        Profile profile = profileRepository.findByUserId(userId);
+        List<Profile> profiles = profileRepository.findAllByUserId(userId);
+        if (profiles.isEmpty()) {
+            return Optional.empty();
+        }
+        Profile profile = profiles.get(profiles.size() - 1);
         log.info("Get profile by userId: " + userId);
         if (profile == null) {
             throw new ProfileNotValueException("Profile not found for userId: " + userId);
@@ -85,5 +107,31 @@ public class ProfileServiceImpl implements ProfileService {
         profileDTO.setCvv(profile.getCvv());
         log.info(profileDTO.toString() + " profileDTO");
         return Optional.of(profileDTO);
+    }
+
+    public List<ProfileDTO> getAllProfiles(Long userId) {
+        List<Profile> profiles = profileRepository.findAllByUserId(userId);
+        log.info("Get all profiles by userId: " + userId);
+        if (profiles == null) {
+            throw new ProfileNotValueException("Profiles not found for userId: " + userId);
+        }
+        List<ProfileDTO> profileDTOs = profiles.stream().map(profile -> {
+            ProfileDTO profileDTO = new ProfileDTO();
+            profileDTO.setFirstName(profile.getFirstName());
+            profileDTO.setLastName(profile.getLastName());
+            profileDTO.setShippingAddress(profile.getShippingAddress());
+            profileDTO.setStaff(profile.getStaff());
+            profileDTO.setBio(profile.getBio());
+            profileDTO.setAddress(profile.getAddress());
+            profileDTO.setPhoneNumber(profile.getPhoneNumber());
+            profileDTO.setNameOfCard(profile.getNameOfCard());
+            profileDTO.setCardType(profile.getCardType());
+            profileDTO.setCardNumber(profile.getCardNumber());
+            profileDTO.setCardExpiryDate(profile.getCardExpiryDate());
+            profileDTO.setCvv(profile.getCvv());
+            return profileDTO;
+        }).toList();
+        log.info(profileDTOs.toString() + " all profiles");
+        return profileDTOs;
     }
 }

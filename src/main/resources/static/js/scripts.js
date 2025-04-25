@@ -141,6 +141,7 @@ function loadProfileData() {
             const emailElement = document.getElementById('profile-email');
             const phoneNumberElement = document.getElementById('profile-phone');
             const bioElement = document.getElementById('profile-bio');
+            const staffElement = document.getElementById('profile-product-id');
 
             if (userNameElement) userNameElement.textContent = data.username;
             if (firstNameElement) firstNameElement.value = data.firstName;
@@ -148,6 +149,7 @@ function loadProfileData() {
             if (emailElement) emailElement.value = data.email;
             if (phoneNumberElement) phoneNumberElement.value = data.phoneNumber;
             if (bioElement) bioElement.value = data.bio;
+            if (staffElement) staffElement.value = data.staff;
     })
     .catch(error => {
         console.error('Error loading profile data:', error);
@@ -191,6 +193,86 @@ function loadProfile() {
     });
 }
 
+async function loadBilling() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/billing', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to load billing.html: ${response.status}`);
+        }
+
+        const billingData = await response.text(); // Parse the response as HTML content
+        document.getElementById('profile-content').innerHTML = billingData; // Render the card content
+        console.log('Billing data fetched successfully');
+        loadBillingData();
+    } catch (error) {
+        console.error('Error fetching billing data:', error);
+    }
+}
+
+async function loadBillingData() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch('api/allProfiles', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch profiles: ${response.status}`);
+        }
+
+        const profiles = await response.json(); // Parse the response as JSON
+        const container = document.getElementById('formControlLg'); // Target container for billing data
+
+        if (container) {
+            container.innerHTML = ''; // Clear existing content
+
+            profiles.forEach(profile => {
+                const profileHtml = `
+                    <div class="mt-4 d-flex justify-content-between align-items-center">
+                        <div class="d-flex flex-row align-items-center">
+                            <img src="https://i.imgur.com/qHX7vY1.webp" class="rounded" width="70" />
+                            <div class="d-flex flex-column ms-3">
+                                <span class="h5 mb-1">${profile.cardType || 'Credit Card'}</span>
+                                <span class="small text-muted">${profile.cardNumber || 'XXXX XXXX XXXX XXXX'}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <input type="text" class="form-control" placeholder="CVC" style="width: 70px;" />
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', profileHtml); // Append the profile HTML
+            });
+        } else {
+            console.error('Element with id "formControlLg" not found.');
+        }
+    } catch (error) {
+        console.error('Error fetching billing data:', error);
+    }
+}
+
+
 function getImage() {
     const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
 /*    const profilePicture = document.getElementById('profile-picture');
@@ -211,6 +293,7 @@ function getImage() {
         }
     })
     .then(response => {
+        loadProfileData();
         if (!response.ok) {
             throw new Error(`Failed to fetch image: ${response.status}`);
         }
@@ -220,7 +303,6 @@ function getImage() {
         const profilePicture = document.getElementById('profile-picture');
         if (profilePicture) {
             profilePicture.src = URL.createObjectURL(blob);// Set the image source to the blob URL
-            loadProfileData();
         } else {
             console.error('Element with id "profile-picture" not found.');
         }
@@ -413,7 +495,7 @@ document.addEventListener('click', function (event) {
         event.preventDefault();
         clearPanel();
         loadProfile();
-        loadProfileData();
+        //loadProfileData();
     }
 
     const homeButton = event.target.closest('#home-button');
@@ -427,12 +509,17 @@ document.addEventListener('click', function (event) {
         event.preventDefault();
         clearPanel();
         loadProfile();
-        loadProfileData();
+        //loadProfileData();
     }
     const checkoutFormButton = event.target.closest('#checkoutFormButton');
     if (checkoutFormButton) {
         event.preventDefault();
         sendProfile();
+    }
+    const checkoutBioFormButton = event.target.closest('#checkoutBioFormButton');
+    if (checkoutBioFormButton) {
+        event.preventDefault();
+        sendBioInfo();
     }
     const changePhoto = event.target.closest('#change-pic');
     if (changePhoto) {
@@ -440,9 +527,116 @@ document.addEventListener('click', function (event) {
         addPhoto();
         clearPanel();
         loadProfile();
-        loadProfileData();
+        //loadProfileData();
+    }
+    const billingInfo = event.target.closest('#profile-billing');
+    if (billingInfo) {
+        event.preventDefault();
+        clearProfileContent()
+        loadBilling();
+        //loadBillingData();
+    }
+    const editBioElement = event.target.closest('#profile-edit-view');
+    if (editBioElement) {
+        event.preventDefault();
+        clearProfileContent();
+        loadBio();
     }
 });
+
+async function sendBioInfo() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    const bioData = {
+        staff: document.getElementById('profile-product-id').value,
+        bio: document.getElementById('profile-bio').value,
+    };
+
+    try {
+        const response = await fetch('/chat/profile', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(bioData)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to update profile: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Profile updated successfully:', result);
+    } catch (error) {
+        console.error('Error updating profile:', error);
+    }
+}
+
+async function loadBio() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/bio', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch bio: ${response.status}`);
+        }
+
+        const bioData = await response.text(); // Parse the response as HTML content
+        const content = document.getElementById('profile-content'); // Target the container
+
+        if (content) {
+            content.innerHTML = bioData; // Render the bio content
+        } else {
+            console.error('Element with id "profile-content" not found.');
+        }
+    } catch (error) {
+        console.error('Error fetching bio data:', error);
+    }
+}
+
+async function updateProfile() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/api/profile', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to load profile data: ${response.status}`);
+        }
+
+        const data = await response.json(); // Parse the response as JSON
+        console.log('Profile data:', data);
+    } catch (error) {
+        console.error('Error loading profile data:', error);
+    }
+}
 
 function addPhoto() {
     const token = localStorage.getItem('authToken');

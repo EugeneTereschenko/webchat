@@ -20,4 +20,13 @@ public class CardController {
         return new ModelAndView("card");
     }
 
+    @GetMapping("/billing")
+    public ModelAndView  billing() {
+        // Perform login logic here
+        // For example, you can save the username in the session or perform authentication
+
+        log.info("Login attempt for user: get billing ");
+        return new ModelAndView("billing");
+    }
+
 }

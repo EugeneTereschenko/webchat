@@ -27,6 +27,8 @@ public class ProfileDTO {
 
     private String bio;
 
+    private String isActive;
+
     private String cardType;
 
     private String nameOfCard;

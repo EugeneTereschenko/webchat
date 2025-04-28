@@ -80,4 +80,45 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("api/change-password")
+    public ResponseEntity<HashMap<String, String>> changePassword(@RequestBody UserDTO userDTO) {
+
+        HashMap<String, String> response = new HashMap<>();
+        log.info("Change password request: " + userDTO.toString());
+        if (userDTO.getPassword() == null || userDTO.getPassword().isEmpty() || userDTO.getNewPassword() == null || userDTO.getNewPassword().isEmpty()) {
+            response.put("message", "Current password or new password is missing");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        try {
+            userService.changePassword(userDTO.getPassword(), userDTO.getNewPassword());
+            response.put("message", "Password changed successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("message", "Failed to change password: " + e.getMessage());
+            return ResponseEntity.status(401).body(response);
+        }
+    }
+
+    @PostMapping("api/refresh-token")
+    public ResponseEntity<HashMap<String, String>> refreshToken(@RequestBody HashMap<String, String> request) {
+        String currentToken = request.get("token");
+        HashMap<String, String> response = new HashMap<>();
+
+        if (currentToken == null || currentToken.isEmpty()) {
+            response.put("message", "Token is missing");
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        try {
+            String newToken = userService.refreshToken(currentToken);
+            response.put("token", newToken);
+            response.put("message", "Token refreshed successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("message", "Failed to refresh token: " + e.getMessage());
+            return ResponseEntity.status(401).body(response);
+        }
+    }
+
 }

@@ -134,10 +134,13 @@ public class UserService {
         return passwordEncoder.matches(oldPassword, user.getPassword());
     }
 
-    public void changePassword(User user, String newPassword) {
-        User userSearch = userRepository.findByUsername(user.getUsername());
-        if (userSearch == null) {
+    public void changePassword(String password, String newPassword) {
+        User user = getAuthenticatedUser();
+        if (user == null) {
             throw new UsernameNotFoundException("User not found");
+        }
+        if (!isPasswordValid(user, password)) {
+            throw new IllegalArgumentException("Old password is incorrect");
         }
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setSalt(newPassword);
@@ -186,5 +189,45 @@ public class UserService {
         }
         String username = authentication.getName();
         return userRepository.findByUsername(username);
+    }
+
+    public String refreshToken(String currentToken) {
+        if (currentToken == null || currentToken.isEmpty()) {
+            throw new IllegalArgumentException("Current token is missing or invalid");
+        }
+        String username = jwtUtil.extractUsername(currentToken);
+
+        if (!jwtUtil.validateToken(currentToken, username)) {
+            throw new SecurityException("Invalid or expired token");
+        }
+
+        User user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found");
+        }
+
+        return jwtUtil.generateToken(username);
+    }
+
+    public String changeUsername(String oldUsername, String newUsername) {
+        User user = userRepository.findByUsername(oldUsername);
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found");
+        }
+
+        if (userRepository.findByUsername(newUsername) != null) {
+            throw new IllegalArgumentException("Username already taken");
+        }
+
+        user.setUsername(newUsername);
+        userRepository.save(user);
+
+        // Generate a new token for the updated username
+        String newToken = jwtUtil.generateToken(newUsername);
+        log.info("New token generated for updated username: " + newToken);
+
+
+        return newToken;
     }
 }

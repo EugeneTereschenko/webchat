@@ -141,7 +141,8 @@ function loadProfileData() {
             const emailElement = document.getElementById('profile-email');
             const phoneNumberElement = document.getElementById('profile-phone');
             const bioElement = document.getElementById('profile-bio');
-            const staffElement = document.getElementById('profile-product-id');
+            const staffElement = document.getElementById('profile-position');
+            const isActive = document.getElementById('formUserLock');
 
             if (userNameElement) userNameElement.textContent = data.username;
             if (firstNameElement) firstNameElement.value = data.firstName;
@@ -149,7 +150,10 @@ function loadProfileData() {
             if (emailElement) emailElement.value = data.email;
             if (phoneNumberElement) phoneNumberElement.value = data.phoneNumber;
             if (bioElement) bioElement.value = data.bio;
-            if (staffElement) staffElement.value = data.staff;
+            if (staffElement) staffElement.innerHTML = data.staff;
+                if (isActive) {
+                    isActive.checked = data.isActive === 'true'; // Set checkbox based on `isActive` value
+                }
     })
     .catch(error => {
         console.error('Error loading profile data:', error);
@@ -468,6 +472,115 @@ function createNavbar() {
     document.body.appendChild(nav);
 }
 
+
+function test() {
+    console.log('Test function called');
+}
+
+async function changePasswordData() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    const oldPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (newPassword !== confirmPassword) {
+        console.error('New password and confirmation do not match');
+        return;
+    }
+
+    const passwordData = {
+        password: oldPassword,
+        newPassword: newPassword,
+    };
+
+    try {
+        const response = await fetch('api/change-password', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(passwordData)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to update password: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Password updated successfully:', result);
+    } catch (error) {
+        console.error('Error updating password:', error);
+    }
+}
+
+function lockUser() {
+        console.log('User is locked set');
+        const token = localStorage.getItem('authToken'); // Retrieve the auth token from localStorage
+
+        if (!token) {
+            console.error('No auth token found');
+            return;
+        }
+
+        fetch('/chat/locked', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error('Failed to lock user: ' + response.status);
+            }
+        })
+        .then(data => {
+            console.log('Response:', data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+
+}
+
+function userUnlock() {
+        console.log('User is unlocked set');
+        const token = localStorage.getItem('authToken'); // Retrieve the auth token from localStorage
+
+        if (!token) {
+            console.error('No auth token found');
+            return;
+        }
+
+        fetch('/chat/unlocked', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error('Failed to unlock user: ' + response.status);
+            }
+        })
+        .then(data => {
+            console.log('Response:', data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+}
+
 document.addEventListener('click', function (event) {
     console.log("Event target:", event.target);
 
@@ -542,7 +655,32 @@ document.addEventListener('click', function (event) {
         clearProfileContent();
         loadBio();
     }
+    const changePassword = event.target.closest('#checkoutPasswordFormButton');
+    if (changePassword) {
+         event.preventDefault();
+         //test();
+         changePasswordData();
+    }
 });
+
+document.addEventListener('change', function (event) {
+    console.log("Event target:", event.target);
+
+    const lockUserElement = event.target.closest('#formUserLock');
+    if (lockUserElement) {
+        if (lockUserElement.checked) {
+            console.log('User is unlocked');
+            //test();
+            userUnlock();
+        } else {
+            console.log('User is locked');
+            //test();
+            lockUser();
+        }
+    }
+});
+
+
 
 async function sendBioInfo() {
     const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
@@ -553,6 +691,7 @@ async function sendBioInfo() {
     }
 
     const bioData = {
+        username: document.getElementById('profile-username').value,
         staff: document.getElementById('profile-product-id').value,
         bio: document.getElementById('profile-bio').value,
     };
@@ -573,6 +712,8 @@ async function sendBioInfo() {
 
         const result = await response.json();
         console.log('Profile updated successfully:', result);
+        // get token and set it to local storage
+        localStorage.setItem('authToken', result.token); // Assuming the response contains a new token
     } catch (error) {
         console.error('Error updating profile:', error);
     }

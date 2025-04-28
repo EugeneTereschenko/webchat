@@ -49,9 +49,13 @@ public class ProfileController {
         log.info("Update profile " + profileDTO.toString());
         HashMap<String, String> response = new HashMap<>();
         try {
+            User user = userService.getAuthenticatedUser();
             profileService.updateProfile(profileDTO);
             response.put("message", "Profile updated successfully");
             response.put("success", "true");
+            String token = userService.changeUsername(user.getUsername(), profileDTO.getUsername());
+            response.put("token", token);
+            response.put("userID", String.valueOf(user.getUserID()));
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("message", "Profile update failed");
@@ -67,6 +71,7 @@ public class ProfileController {
             Optional<ProfileDTO> profileDTO = profileService.getProfileByUserId(user.getUserID());
             profileDTO.get().setUsername(user.getUsername());
             profileDTO.get().setEmail(user.getEmail());
+            profileDTO.get().setIsActive(String.valueOf(user.isActive()));
             log.info("Get profile " + profileDTO.get().toString());
             if (profileDTO.isPresent()) {
                 return ResponseEntity.ok(profileDTO.get());
@@ -120,6 +125,28 @@ public class ProfileController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body(null);
         }
+    }
+
+    @GetMapping("/locked")
+    public ResponseEntity<HashMap<String, String>> locked() {
+        User user = userService.getAuthenticatedUser();
+        userService.deactivateUser(user.getUsername());
+
+        HashMap<String, String> response = new HashMap<>();
+        response.put("message", "User is locked");
+        response.put("success", "false");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/unlocked")
+    public ResponseEntity<HashMap<String, String>> unlocked() {
+        User user = userService.getAuthenticatedUser();
+        userService.activateUser(user.getUsername());
+
+        HashMap<String, String> response = new HashMap<>();
+        response.put("message", "User is unlocked");
+        response.put("success", "true");
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/profile")

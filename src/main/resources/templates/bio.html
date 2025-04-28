@@ -1,0 +1,80 @@
+<!-- Credit card form -->
+<head xmlns:th="http://www.w3.org/1999/xhtml">
+    <link rel="stylesheet" th:href="@{/css/bio.css}">
+</head>
+
+<section style="background-color: #eee;">
+    <div class="container py-5">
+        <div class="row d-flex justify-content-center">
+            <div class="col-md-12 col-lg-10 col-xl-8">
+                <div class="row">
+                    <div class="col-md-8 mb-4">
+                        <div class="card mb-4">
+                            <div class="card-header py-3">
+                                <h5 class="mb-0">Profile details</h5>
+                            </div>
+                            <div class="card-body">
+                                <form>
+                                    <div class="mb-4">
+                                        <div class="row g-3">
+                                            <div class="col-12">
+                                                <label class="form-label">Username</label>
+                                                <textarea class="form-control" rows="2"
+                                                          id="profile-username"></textarea>
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label class="form-label">Profile position</label>
+                                                <textarea class="form-control" rows="4"
+                                                          id="profile-product-id"></textarea>
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label class="form-label">Bio</label>
+                                                <textarea class="form-control" rows="4" id="profile-bio"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button data-mdb-button-init data-mdb-ripple-init
+                                            class="btn btn-primary btn-lg btn-block" type="submit"
+                                            id="checkoutBioFormButton">
+                                        Update profile
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        <!-- Change password card-->
+                        <div class="card mb-4">
+                            <div class="card-header">Change Password</div>
+                            <div class="card-body">
+                                <form>
+                                    <!-- Form Group (current password)-->
+                                    <div class="mb-3">
+                                        <label class="small mb-1" for="currentPassword">Current Password</label>
+                                        <input class="form-control" id="currentPassword" type="password"
+                                               placeholder="Enter current password">
+                                    </div>
+                                    <!-- Form Group (new password)-->
+                                    <div class="mb-3">
+                                        <label class="small mb-1" for="newPassword">New Password</label>
+                                        <input class="form-control" id="newPassword" type="password"
+                                               placeholder="Enter new password">
+                                    </div>
+                                    <!-- Form Group (confirm password)-->
+                                    <div class="mb-3">
+                                        <label class="small mb-1" for="confirmPassword">Confirm Password</label>
+                                        <input class="form-control" id="confirmPassword" type="password"
+                                               placeholder="Confirm new password">
+                                    </div>
+                                    <button class="btn btn-primary" type="button" id="checkoutPasswordFormButton">Save</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- Credit card form -->

@@ -4,7 +4,7 @@
 <head>
     <title>Thymeleaf Chat</title>
     <link rel="stylesheet" th:href="@{/css/profile.css}">
-   <!-- <script src="/chat/js/scripts.js"></script> -->
+    <!-- <script src="/chat/js/scripts.js"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
             integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
             crossorigin="anonymous"></script>
@@ -27,16 +27,21 @@
                 </div>
                 <div class="text-center">
                     <div class="position-relative d-inline-block">
-                        <img id="profile-picture" class="rounded-circle profile-pic" alt="Profile Picture">
-                        <button class="btn btn-primary btn-sm position-absolute bottom-0 end-0 rounded-circle" id="change-pic">
+                        <img id="profile-picture" class="rounded-circle profile-pic">
+                        <b-avatar src="https://placekitten.com/300/300" size="6rem"></b-avatar>
+                        <button class="btn btn-primary btn-sm position-absolute bottom-0 end-0 rounded-circle"
+                                id="change-pic">
                             <i class="fas fa-camera"></i>
                         </button>
                     </div>
                     <h3 class="mt-3 mb-1" id="profile-user-name"></h3>
-                    <p class="text-muted mb-3" id="profile-position">Senior Product Designer</p>
+                    <p class="text-muted mb-3" id="profile-position"></p>
                     <div class="d-flex justify-content-center gap-2 mb-4">
-                        <button class="btn btn-outline-primary" id="profile-message"><i class="fas fa-envelope me-2"></i>Message</button>
-                        <button class="btn btn-primary" id="profile-connect"><i class="fas fa-user-plus me-2"></i>Connect</button>
+                        <button class="btn btn-outline-primary" id="profile-message"><i
+                                class="fas fa-envelope me-2"></i>Message
+                        </button>
+                        <button class="btn btn-primary" id="profile-connect"><i class="fas fa-user-plus me-2"></i>Connect
+                        </button>
                     </div>
                 </div>
             </div>
@@ -50,13 +55,21 @@
                             <div class="col-lg-3 border-end">
                                 <div class="p-4">
                                     <div class="nav flex-column nav-pills">
-                                        <a class="nav-link active" href="#" id="profile-info"><i class="fas fa-user me-2"></i>Personal
+                                        <a class="nav-link active" href="#" id="profile-info"><i
+                                                class="fas fa-user me-2"></i>Personal
                                             Info</a>
-                                        <a class="nav-link" href="#" id="profile-security"><i class="fas fa-lock me-2"></i>Security</a>
-                                        <a class="nav-link" href="#" id="profile-notification"><i class="fas fa-bell me-2"></i>Notifications</a>
-                                        <a class="nav-link" href="#" id="profile-billing"><i class="fas fa-credit-card me-2"></i>Billing</a>
-                                        <a class="nav-link" href="#" id="edit-profile" ><i class="fas fa-user me-2"></i>Edit</a>
-                                        <a class="nav-link" href="#" id="profile-activity"><i class="fas fa-chart-line me-2"></i>Activity</a>
+                                        <a class="nav-link" href="#" id="profile-security"><i
+                                                class="fas fa-lock me-2"></i>Security</a>
+                                        <a class="nav-link" href="#" id="profile-notification"><i
+                                                class="fas fa-bell me-2"></i>Notifications</a>
+                                        <a class="nav-link" href="#" id="profile-billing"><i
+                                                class="fas fa-credit-card me-2"></i>Billing</a>
+                                        <a class="nav-link" href="#" id="edit-profile"><i
+                                                class="fas fa-credit-card me-2"></i>Add card</a>
+                                        <a class="nav-link" href="#" id="profile-edit-view"><i
+                                                class="fas fa-user me-2"></i>Edit profile</a>
+                                        <a class="nav-link" href="#" id="profile-activity"><i
+                                                class="fas fa-chart-line me-2"></i>Activity</a>
                                     </div>
                                 </div>
                             </div>
@@ -120,6 +133,22 @@
                                                         </div>
                                                         <div class="form-check form-switch">
                                                             <input class="form-check-input" type="checkbox" checked>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="settings-card card">
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <h6 class="mb-1">Lock Account</h6>
+                                                            <p class="text-muted mb-0 small">Block User
+                                                            </p>
+                                                        </div>
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" id="formUserLock" checked>
                                                         </div>
                                                     </div>
                                                 </div>

@@ -15,6 +15,8 @@ public class ProfileDTO {
 
     private String username;
 
+    private String email;
+
     private String phoneNumber;
 
     private String address;
@@ -24,6 +26,8 @@ public class ProfileDTO {
     private String staff;
 
     private String bio;
+
+    private String isActive;
 
     private String cardType;
 

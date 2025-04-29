@@ -9,6 +9,7 @@ import com.example.webchat.service.UserService;
 import com.example.webchat.service.impl.ChatService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -110,9 +111,13 @@ public class ChatController {
     }
 
     @PostMapping("/api/chatCreate")
-    public ResponseEntity<Chat> createChat(@RequestParam String name) {
+    public ResponseEntity<?> createChat(@RequestParam String name) {
         Optional<Chat> chat = chatService.updateChat(name);
-        return ResponseEntity.ok(chat.get());
+        if (chat.isPresent()) {
+            return ResponseEntity.ok(chat.get());
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");
+        }
     }
 
 

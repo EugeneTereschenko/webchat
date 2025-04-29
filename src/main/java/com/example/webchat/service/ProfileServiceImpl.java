@@ -85,7 +85,7 @@ public class ProfileServiceImpl implements ProfileService {
     public Optional<ProfileDTO> getProfileByUserId(Long userId) {
         List<Profile> profiles = profileRepository.findAllByUserId(userId);
         if (profiles.isEmpty()) {
-            return Optional.empty();
+            return Optional.of(new ProfileDTO());
         }
         Profile profile = profiles.get(profiles.size() - 1);
         log.info("Get profile by userId: " + userId);

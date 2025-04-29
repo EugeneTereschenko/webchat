@@ -38,6 +38,9 @@ public class SecurityConfig {
                                 .requestMatchers( "/logout/**", "/login/**", "/singup/**", "/css/**", "/js/**", "/api/singup/**", "/api/login/**", "/h2-console/**").permitAll()
                                 .anyRequest().authenticated()
                 )
+                .formLogin(formLogin ->
+                        formLogin.loginPage("/login").permitAll()
+                )
                 .sessionManagement(sessionManagement ->
                         sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )

@@ -21,9 +21,22 @@ function scrollToBottom() {
     messageContainer.scrollTop = messageContainer.scrollHeight;
 }
 
-function saveUsername() {
-    const username = document.getElementById("username").value;
-    setCookie("username", username, 7);
+function clearPanel() {
+    const panel = document.getElementById('panel');
+    if (panel) {
+        panel.innerHTML = ''; // Clear all existing content in the panel
+    } else {
+        console.error('Element with id "panel" not found.');
+    }
+}
+
+function clearProfileContent() {
+    const content = document.getElementById('profile-content');
+    if (content) {
+        content.innerHTML = ''; // Clear all existing content in the profile section
+    } else {
+        console.error('Element with id "profile-content" not found.');
+    }
 }
 
 function fetchChatMessages() {
@@ -154,6 +167,8 @@ function loadProfileData() {
                 if (isActive) {
                     isActive.checked = data.isActive === 'true'; // Set checkbox based on `isActive` value
                 }
+
+            loadProfileActivity("activity-list", 3);
     })
     .catch(error => {
         console.error('Error loading profile data:', error);
@@ -195,6 +210,19 @@ function loadProfile() {
     .catch(error => {
         console.error('Error loading profile.html:', error);
     });
+}
+
+function setProfileElements() {
+    const profileContent = document.getElementById('profile-content');
+    profileContent.innerHTML = "<section style=\"background-color: #eee;\">" +
+                                    "<div class=\"container py-5\">" +
+                                        "<div class=\"row d-flex justify-content-center\">" +
+                                            "<div class=\"col-md-12 col-lg-10 col-xl-8\">" +
+                                                "<div id=\"log-info\"></div>" +
+                                            "</div>" +
+                                        "</div>" +
+                                    "</div>" +
+                                "</section>";
 }
 
 async function loadBilling() {
@@ -581,106 +609,6 @@ function userUnlock() {
         });
 }
 
-document.addEventListener('click', function (event) {
-    console.log("Event target:", event.target);
-
-    const editProfileElement = event.target.closest('#edit-profile');
-    if (editProfileElement) {
-        event.preventDefault();
-        clearProfileContent();
-        fetchCard();
-    }
-    const chatCreate = event.target.closest('#button-custom-chat-create');
-    if (chatCreate) {
-        event.preventDefault();
-        createChat();
-        fetchUsers();
-        fetchUser();
-    }
-    const messageAdd = event.target.closest('#button_send_message');
-    if (messageAdd) {
-        event.preventDefault();
-        addMessageToChat();
-    }
-
-    const profileLink = event.target.closest('#profile-link');
-    if (profileLink) {
-        event.preventDefault();
-        clearPanel();
-        loadProfile();
-        //loadProfileData();
-    }
-
-    const homeButton = event.target.closest('#home-button');
-    if (homeButton) {
-        event.preventDefault();
-        clearPanel();
-        getChat();
-    }
-    const profileInfo = event.target.closest('#profile-info');
-    if (profileInfo) {
-        event.preventDefault();
-        clearPanel();
-        loadProfile();
-        //loadProfileData();
-    }
-    const checkoutFormButton = event.target.closest('#checkoutFormButton');
-    if (checkoutFormButton) {
-        event.preventDefault();
-        sendProfile();
-    }
-    const checkoutBioFormButton = event.target.closest('#checkoutBioFormButton');
-    if (checkoutBioFormButton) {
-        event.preventDefault();
-        sendBioInfo();
-    }
-    const changePhoto = event.target.closest('#change-pic');
-    if (changePhoto) {
-        event.preventDefault();
-        addPhoto();
-        clearPanel();
-        loadProfile();
-        //loadProfileData();
-    }
-    const billingInfo = event.target.closest('#profile-billing');
-    if (billingInfo) {
-        event.preventDefault();
-        clearProfileContent()
-        loadBilling();
-        //loadBillingData();
-    }
-    const editBioElement = event.target.closest('#profile-edit-view');
-    if (editBioElement) {
-        event.preventDefault();
-        clearProfileContent();
-        loadBio();
-    }
-    const changePassword = event.target.closest('#checkoutPasswordFormButton');
-    if (changePassword) {
-         event.preventDefault();
-         //test();
-         changePasswordData();
-    }
-});
-
-document.addEventListener('change', function (event) {
-    console.log("Event target:", event.target);
-
-    const lockUserElement = event.target.closest('#formUserLock');
-    if (lockUserElement) {
-        if (lockUserElement.checked) {
-            console.log('User is unlocked');
-            //test();
-            userUnlock();
-        } else {
-            console.log('User is locked');
-            //test();
-            lockUser();
-        }
-    }
-});
-
-
 
 async function sendBioInfo() {
     const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
@@ -779,122 +707,6 @@ async function updateProfile() {
     }
 }
 
-function addPhoto() {
-    const token = localStorage.getItem('authToken');
-    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
-    modal.show();
-
-
-    const fileInput = document.getElementById('file-input');
-    fileInput.addEventListener('change', function () {
-        const file = fileInput.files[0];
-
-        if (token && file) {
-            const formData = new FormData();
-            formData.append('file', file);
-
-            fetch('/chat/upload', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + token
-                },
-                body: formData
-            })
-            .then(response => {
-                if (response.ok) {
-                    console.log('File uploaded successfully');
-                    //loadProfile(); // Optionally refresh the profile or update the UI
-                } else {
-                    throw new Error('Failed to upload file: ' + response.status);
-                }
-            })
-            .catch(error => {
-                console.error('Error uploading file', error);
-            });
-        } else {
-            console.error('No auth token found or no file selected');
-        }
-    }, { once: true }); // Ensure the event listener is added only once
-}
-
-
-function addMessageToChat() {
-        const token = localStorage.getItem('authToken');
-        chatName = document.getElementById('chat-name').value
-        if (!chatName) {
-            const modal = new bootstrap.Modal(document.getElementById('messageModal'));
-            modal.show();
-            return;
-        }
-
-        if (token) {
-            const messageChatData = {
-                    user: document.getElementById('message-user').value,
-                    message: document.getElementById('message-message').value,
-                    chatName: document.getElementById('chat-name').value
-            };
-
-            //console.log('Message data:', messageChatData);
-            fetch('/chat/api/chatAdd', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify(messageChatData)
-            })
-            .then(response => {
-                if (response.ok) {
-                //console.log('Message saved successfully');
-            //return response.json();
-                } else {
-                    throw new Error('Failed to save message: ' + response.status);
-                }
-            })
-            .then(data => {
-            console.log('Message saved successfully', data);
-            // Optionally, refresh the messages or update the UI
-            //fetchMessages();
-            fetchChatMessages();
-            })
-            .catch(error => {
-                console.error('Error saving message', error);
-            });
-
-        } else {
-            console.error('No auth token found');
-        }
-}
-
-function createChat(){
-        const chatName = document.getElementById('chat-name').value;
-        const token = localStorage.getItem('authToken');
-
-        if (token) {
-            fetch('/chat/api/chatCreate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: new URLSearchParams({
-                    'name': chatName
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Success:', data);
-                document.getElementById('chat-name-value').textContent = data.chatName;
-                setInterval(fetchChatMessages, 5000);
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
-        } else {
-            console.error('No auth token found');
-        }
-}
-
 function sendProfile() {
 
     let cardType = '';
@@ -956,22 +768,172 @@ function sendProfile() {
         });
 }
 
+function addPhoto() {
+    const token = localStorage.getItem('authToken');
+    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+    modal.show();
 
-function clearPanel() {
-    const panel = document.getElementById('panel');
-    if (panel) {
-        panel.innerHTML = ''; // Clear all existing content in the panel
-    } else {
-        console.error('Element with id "panel" not found.');
+
+    const fileInput = document.getElementById('file-input');
+    fileInput.addEventListener('change', function () {
+        const file = fileInput.files[0];
+
+        if (token && file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/chat/upload', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('File uploaded successfully');
+                    //loadProfile(); // Optionally refresh the profile or update the UI
+                } else {
+                    throw new Error('Failed to upload file: ' + response.status);
+                }
+            })
+            .catch(error => {
+                console.error('Error uploading file', error);
+            });
+        } else {
+            console.error('No auth token found or no file selected');
+        }
+    }, { once: true }); // Ensure the event listener is added only once
+}
+
+
+async function sendChatMessage() {
+        const token = localStorage.getItem('authToken');
+        chatName = document.getElementById('chat-name').value
+        if (!chatName) {
+            const modal = new bootstrap.Modal(document.getElementById('messageModal'));
+            modal.show();
+            return;
+        }
+        if (!token) {
+           console.error('No auth token found');
+           return;
+        }
+
+        const messageChatData = {
+            user: document.getElementById('message-user').value,
+            message: document.getElementById('message-message').value,
+            chatName: document.getElementById('chat-name').value
+        };
+        console.log('Message     data:', messageChatData);
+
+        try {
+            response = await fetch('/chat/api/chatAdd', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                    },
+                body: JSON.stringify(messageChatData)
+            })
+            if (response.ok) {
+                console.log('Message saved successfully');
+                fetchChatMessages();
+            }
+        } catch (error) {
+            console.error('Failed to save message', error);
+        }
+}
+
+
+async function loadProfileActivity(idElement, numOfElements) {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/activity?numOfLogs=${encodeURIComponent(numOfElements)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch activity data');
+        }
+
+        const data = await response.json();
+        const activityList = document.getElementById(idElement);
+        activityList.innerHTML = ''; // Clear existing content
+
+        // Iterate over the response data and create activity items
+        for (const [activity, time] of Object.entries(data)) {
+            if (activity === 'message' || activity === 'success') continue; // Skip metadata
+
+            const activityItem = document.createElement('div');
+            activityItem.className = 'activity-item mb-3';
+
+            const activityTitle = document.createElement('h6');
+            activityTitle.className = 'mb-1';
+            activityTitle.textContent = activity;
+
+            const activityTime = document.createElement('p');
+            activityTime.className = 'text-muted small mb-0';
+            activityTime.textContent = time;
+
+            activityItem.appendChild(activityTitle);
+            activityItem.appendChild(activityTime);
+            activityList.appendChild(activityItem);
+        }
+    } catch (error) {
+        console.error('Error loading profile activity:', error);
     }
 }
 
-function clearProfileContent() {
-    const content = document.getElementById('profile-content');
-    if (content) {
-        content.innerHTML = ''; // Clear all existing content in the profile section
-    } else {
-        console.error('Element with id "profile-content" not found.');
+async function sendChatName() {
+    const token = localStorage.getItem('authToken');
+    const chatName = document.getElementById('chat-name').value;
+
+    if (!chatName) {
+        console.error('Chat name is required');
+        return;
+    }
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/api/chatCreate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': 'Bearer ' + token
+            },
+            body: new URLSearchParams({
+                'name': chatName
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text(); // Read the response as text
+            console.error('Error creating chat:', errorText);
+            return;
+        }
+
+        const data = await response.json();
+        console.log('Chat created successfully:', data);
+        document.getElementById('chat-name-value').textContent = chatName;
+        fetchUsers();
+        fetchUser();
+        setInterval(fetchChatMessages, 5000);
+    } catch (error) {
+        console.error('Error creating chat:', error);
     }
 }
 
@@ -1036,6 +998,111 @@ async function getChat() {
         console.error('Error fetching chat data:', error);
     }
 }
+
+document.addEventListener('click', function (event) {
+    console.log("Event target:", event.target);
+
+    const editProfileElement = event.target.closest('#edit-profile');
+    if (editProfileElement) {
+        event.preventDefault();
+        clearProfileContent();
+        fetchCard();
+    }
+    const chatCreate = event.target.closest('#button-custom-chat-create');
+    if (chatCreate) {
+        event.preventDefault();
+        //createChat();
+        sendChatName();
+    }
+    const messageAdd = event.target.closest('#button_send_message');
+    if (messageAdd) {
+        event.preventDefault();
+        //addMessageToChat();
+        sendChatMessage();
+    }
+
+    const profileLink = event.target.closest('#profile-link');
+    if (profileLink) {
+        event.preventDefault();
+        clearPanel();
+        loadProfile();
+    }
+
+    const homeButton = event.target.closest('#home-button');
+    if (homeButton) {
+        event.preventDefault();
+        clearPanel();
+        getChat();
+    }
+    const profileInfo = event.target.closest('#profile-info');
+    if (profileInfo) {
+        event.preventDefault();
+        clearPanel();
+        loadProfile();
+    }
+    const checkoutFormButton = event.target.closest('#checkoutFormButton');
+    if (checkoutFormButton) {
+        event.preventDefault();
+        sendProfile();
+    }
+    const checkoutBioFormButton = event.target.closest('#checkoutBioFormButton');
+    if (checkoutBioFormButton) {
+        event.preventDefault();
+        sendBioInfo();
+    }
+    const changePhoto = event.target.closest('#change-pic');
+    if (changePhoto) {
+        event.preventDefault();
+        addPhoto();
+        clearPanel();
+        loadProfile();
+    }
+    const billingInfo = event.target.closest('#profile-billing');
+    if (billingInfo) {
+        event.preventDefault();
+        clearProfileContent()
+        loadBilling();
+    }
+    const editBioElement = event.target.closest('#profile-edit-view');
+    if (editBioElement) {
+        event.preventDefault();
+        clearProfileContent();
+        loadBio();
+    }
+    const changePassword = event.target.closest('#checkoutPasswordFormButton');
+    if (changePassword) {
+         event.preventDefault();
+         //test();
+         changePasswordData();
+    }
+    const modalClosePictureElement = event.target.closest('#modalClosePicture');
+    if (modalClosePictureElement) {
+        event.preventDefault();
+        getImage();
+    }
+    const profileActivityElement = event.target.closest('#profile-activity');
+    if (profileActivityElement) {
+        event.preventDefault();
+        clearProfileContent();
+        setProfileElements();
+        loadProfileActivity("log-info", 5);
+    }
+});
+
+document.addEventListener('change', function (event) {
+    console.log("Event target:", event.target);
+
+    const lockUserElement = event.target.closest('#formUserLock');
+    if (lockUserElement) {
+        if (lockUserElement.checked) {
+            console.log('User is unlocked');
+            userUnlock();
+        } else {
+            console.log('User is locked');
+            lockUser();
+        }
+    }
+});
 
 window.onload = function() {
     getChat();

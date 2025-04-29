@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -79,7 +80,7 @@ public class ProfileController {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
-            log.info(e + "exception get profile");
+            log.info(e + " Exception get profile");
             return ResponseEntity.status(500).body(null);
         }
     }
@@ -93,10 +94,10 @@ public class ProfileController {
             if (!profileDTO.isEmpty()) {
                 return ResponseEntity.ok(profileDTO);
             } else {
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.ok(new ArrayList<>());
             }
         } catch (Exception e) {
-            log.info(e + "exception get all profiles");
+            log.info(e + " Exception get all profiles");
             return ResponseEntity.status(500).body(null);
         }
     }
@@ -118,7 +119,7 @@ public class ProfileController {
     public ResponseEntity<byte[]> getImage() {
         try {
             User user = userService.getAuthenticatedUser();
-            byte[] imageData = imageService.getImageByUserId(user.getUserID()).getData();
+            byte[] imageData = imageService.getImageByUserId(user.getUserID()).get().getData();
             return ResponseEntity.ok()
                     .header("Content-Type", "image/jpeg") // Adjust based on your image type
                     .body(imageData);
@@ -145,6 +146,19 @@ public class ProfileController {
 
         HashMap<String, String> response = new HashMap<>();
         response.put("message", "User is unlocked");
+        response.put("success", "true");
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/activity")
+    public ResponseEntity<HashMap<String, String>> getActivity(@RequestParam String numOfLogs) {
+        //User user = userService.getAuthenticatedUser();
+        log.info("Get user activity " + numOfLogs);
+        HashMap<String, String> response = new HashMap<>();
+        response.put("Updated profile picture", "2 hours ago");
+        response.put("Updated profile", "1 hour ago");
+        response.put("Last login", "3 days ago");
+        response.put("message", "User activity retrieved successfully");
         response.put("success", "true");
         return ResponseEntity.ok(response);
     }

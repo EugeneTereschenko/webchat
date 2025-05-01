@@ -5,6 +5,7 @@ import com.example.webchat.model.Profile;
 import com.example.webchat.model.User;
 import com.example.webchat.service.ImageService;
 import com.example.webchat.service.UserService;
+import com.example.webchat.service.impl.ActivityService;
 import com.example.webchat.service.impl.ProfileService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,13 +13,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.validation.Valid;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @AllArgsConstructor
@@ -28,6 +25,7 @@ public class ProfileController {
     private final ProfileService profileService;
     private final ImageService imageService;
     private final UserService userService;
+    private final ActivityService activityService;
 
     @PostMapping("/profile")
     public ResponseEntity<HashMap<String, String>> profile(@Valid @RequestBody ProfileDTO profileDTO) {
@@ -57,6 +55,7 @@ public class ProfileController {
             String token = userService.changeUsername(user.getUsername(), profileDTO.getUsername());
             response.put("token", token);
             response.put("userID", String.valueOf(user.getUserID()));
+            activityService.addActivity("Profile updated", user.getUserID(), new Date());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("message", "Profile update failed");
@@ -109,6 +108,7 @@ public class ProfileController {
             User user = userService.getAuthenticatedUser();
             log.info("User upload a photo " + user.getUsername());
             Long imageId = imageService.saveImage(file, user.getUserID());
+            activityService.addActivity("Upload image", user.getUserID(), new Date());
             return ResponseEntity.ok("Image uploaded successfully with ID: " + imageId);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error uploading image: " + e.getMessage());
@@ -136,6 +136,7 @@ public class ProfileController {
         HashMap<String, String> response = new HashMap<>();
         response.put("message", "User is locked");
         response.put("success", "false");
+        activityService.addActivity("User is locked", user.getUserID(), new Date());
         return ResponseEntity.ok(response);
     }
 
@@ -147,37 +148,16 @@ public class ProfileController {
         HashMap<String, String> response = new HashMap<>();
         response.put("message", "User is unlocked");
         response.put("success", "true");
+        activityService.addActivity("User is unlocked", user.getUserID(), new Date());
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/activity")
     public ResponseEntity<HashMap<String, String>> getActivity(@RequestParam String numOfLogs) {
-        //User user = userService.getAuthenticatedUser();
         log.info("Get user activity " + numOfLogs);
-        HashMap<String, String> response = new HashMap<>();
-        response.put("Updated profile picture", "2 hours ago");
-        response.put("Updated profile", "1 hour ago");
-        response.put("Last login", "3 days ago");
-        response.put("message", "User activity retrieved successfully");
-        response.put("success", "true");
+        User user = userService.getAuthenticatedUser();
+        HashMap<String, String> response = activityService.getActivitiesByUserId(user.getUserID(), Integer.valueOf(numOfLogs));
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/profile")
-    public ModelAndView profile() {
-        // Perform login logic here
-        // For example, you can save the username in the session or perform authentication
-
-        log.info("Login attempt for user: ");
-        return new ModelAndView("profile");
-    }
-
-    @GetMapping("/bio")
-    public ModelAndView bio() {
-        // Perform login logic here
-        // For example, you can save the username in the session or perform authentication
-
-        log.info("Login attempt for user: ");
-        return new ModelAndView("bio");
-    }
 }

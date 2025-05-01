@@ -3,6 +3,8 @@ package com.example.webchat.controller;
 import com.example.webchat.dto.UserDTO;
 import com.example.webchat.model.User;
 import com.example.webchat.service.UserService;
+import com.example.webchat.service.impl.ActivityService;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.mapping.Map;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,33 +13,18 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.validation.Valid;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Optional;
 
 @Slf4j
 @RestController
+@AllArgsConstructor
 public class UserController {
 
-    @Autowired
-    private UserService userService;
 
-    @GetMapping("/login")
-    public ModelAndView login() {
-        // Perform login logic here
-        // For example, you can save the username in the session or perform authentication
-
-        log.info("Login attempt for user: ");
-        return new ModelAndView("login");
-    }
-
-    @GetMapping("/singup")
-    public ModelAndView singup() {
-        // Perform login logic here
-        // For example, you can save the username in the session or perform authentication
-
-        log.info("Login attempt for user: ");
-        return new ModelAndView("singup");
-    }
+    private final UserService userService;
+    private final ActivityService activityService;
 
 
 
@@ -55,6 +42,7 @@ public class UserController {
         log.info("Registering user: " + user.toString());
         HashMap<String, String> response = new HashMap<>();
         response.put("message", "User " + user.getUsername() + " registered successfully");
+        activityService.addActivity("User registered", user.getUserID(), new Date());
         return ResponseEntity.ok(response);
     }
 
@@ -77,6 +65,7 @@ public class UserController {
         response.put("userID", String.valueOf(user.getUserID()));
         response.put("message", "User logged in successfully");
         response.put("success", "true");
+        activityService.addActivity("User login", user.getUserID(), new Date());
         return ResponseEntity.ok(response);
     }
 
@@ -93,6 +82,8 @@ public class UserController {
         try {
             userService.changePassword(userDTO.getPassword(), userDTO.getNewPassword());
             response.put("message", "Password changed successfully");
+            User user = userService.getAuthenticatedUser();
+            activityService.addActivity("Change password", user.getUserID(), new Date());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("message", "Failed to change password: " + e.getMessage());

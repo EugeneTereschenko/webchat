@@ -88,6 +88,7 @@ public class UserService {
         userNew.setEmail(Optional.ofNullable(registrationDTO.getEmail()).orElse(""));
         passwordSalt = Optional.ofNullable(registrationDTO.getPassword()).orElse(generatePassayPassword(8));
         userNew.setPassword(passwordEncoder.encode(passwordSalt));
+        userNew.setTwoFactorEnabled(false);
         userNew.setSalt(passwordSalt);
 
         log.info(userNew.toString() + " " + userNew.getUsername() + " " + userNew.getPassword());
@@ -229,5 +230,17 @@ public class UserService {
 
 
         return newToken;
+    }
+
+    public void twoFactors(String twoFactors){
+        User user = getAuthenticatedUser();
+        if (user == null) {
+            throw new UsernameNotFoundException("Authenticated user not found");
+        }
+        user.setTwoFactorEnabled(Optional.ofNullable(twoFactors)
+                .map(Boolean::parseBoolean)
+                .orElse(false));
+
+        userRepository.save(user);
     }
 }

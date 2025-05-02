@@ -18,6 +18,7 @@ public class UserDTO {
     private String password;
     private String newPassword;
     private String isActive;
+    private String userCode;
     private String staff;
     private String bio;
 }

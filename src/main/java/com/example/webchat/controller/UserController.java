@@ -112,4 +112,17 @@ public class UserController {
         }
     }
 
+    @GetMapping("api/twoFactors")
+    public ResponseEntity<HashMap<String, String>> twoFactorAuthentication(@RequestParam String twoFactors) {
+        HashMap<String, String> response = new HashMap<>();
+        try {
+            userService.twoFactors(twoFactors);
+            response.put("message", "Two-factor update successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("message", "Failed to update two-factor" + e.getMessage());
+            return ResponseEntity.status(401).body(response);
+        }
+    }
+
 }

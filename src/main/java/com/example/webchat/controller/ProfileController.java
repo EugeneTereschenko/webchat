@@ -30,6 +30,7 @@ public class ProfileController {
     @PostMapping("/profile")
     public ResponseEntity<HashMap<String, String>> profile(@Valid @RequestBody ProfileDTO profileDTO) {
         log.info("Profile " + profileDTO.toString());
+        User user = userService.getAuthenticatedUser();
         Optional<Profile> profile = profileService.createProfile(profileDTO);
         HashMap<String, String> response = new HashMap<>();
 
@@ -38,6 +39,7 @@ public class ProfileController {
             response.put("success", "false");
             return ResponseEntity.badRequest().body(response);
         }
+        activityService.addActivity("Profile create", user.getUserID(), new Date());
         response.put("message", "Profile created successfully");
         response.put("success", "true");
         return ResponseEntity.ok(response);
@@ -72,6 +74,8 @@ public class ProfileController {
             profileDTO.get().setUsername(user.getUsername());
             profileDTO.get().setEmail(user.getEmail());
             profileDTO.get().setIsActive(String.valueOf(user.isActive()));
+            profileDTO.get().setNotification(String.valueOf(false));
+            profileDTO.get().setTwoFactors(String.valueOf(user.isTwoFactorEnabled()));
             log.info("Get profile " + profileDTO.get().toString());
             if (profileDTO.isPresent()) {
                 return ResponseEntity.ok(profileDTO.get());
@@ -157,6 +161,24 @@ public class ProfileController {
         log.info("Get user activity " + numOfLogs);
         User user = userService.getAuthenticatedUser();
         HashMap<String, String> response = activityService.getActivitiesByUserId(user.getUserID(), Integer.valueOf(numOfLogs));
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/updateNotification")
+    public ResponseEntity<HashMap<String, String>> updateNotification(@RequestParam String notification) {
+        log.info("Update user notification " + notification);
+        User user = userService.getAuthenticatedUser();
+        HashMap<String, String> response = new HashMap<>();
+        if (notification.equals("true")) {
+            Boolean result = profileService.updateNotification(user.getUsername(), true);
+            activityService.addActivity("Update add Email notifications", user.getUserID(), new Date());
+            response.put("message", "Notification updated successfully");
+            response.put("success", String.valueOf(result));
+        } else {
+            Boolean result = profileService.updateNotification(user.getUsername(), false);
+            response.put("message", "Notification updated successfully");
+            response.put("success", String.valueOf(result));
+        }
         return ResponseEntity.ok(response);
     }
 

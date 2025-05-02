@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ProfileService {
+    boolean updateNotification(String name, Boolean notification);
     void saveProfile(ProfileDTO profileDTO);
     void updateProfile(ProfileDTO profileDTO);
     Optional<Profile> createProfile(ProfileDTO profileDTO);

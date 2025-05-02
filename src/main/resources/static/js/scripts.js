@@ -52,6 +52,60 @@ function setProfileElements() {
                                 "</section>";
 }
 
+async function twoFactors(twoFactorsEnable) {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/api/twoFactors?twoFactors=${encodeURIComponent(twoFactorsEnable)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to update two-factor authentication: ${response.status}`);
+        }
+
+        const data = await response.json(); // Parse the response as JSON
+        console.log('Two-factor authentication updated successfully:', data);
+    } catch (error) {
+        console.error('Error updating two-factor authentication:', error);
+    }
+}
+
+async function updateNotification(notification) {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/updateNotification?notification=${notification}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to update notification: ${response.status}`);
+        }
+
+        const data = await response.json(); // Parse the response as JSON
+        console.log('Notification updated successfully:', data);
+    } catch (error) {
+        console.error('Error updating notification:', error);
+    }
+}
+
 async function fetchChatMessages() {
     const token = localStorage.getItem('authToken'); // Retrieve the auth token
     const chatName = document.getElementById('chat-name').value;
@@ -204,6 +258,8 @@ async function loadProfileData() {
         const bioElement = document.getElementById('profile-bio');
         const staffElement = document.getElementById('profile-position');
         const isActive = document.getElementById('formUserLock');
+        const notification = document.getElementById('formEmailNotification');
+        const isAuthorize = document.getElementById('formTwoFactors');
 
         if (userNameElement) userNameElement.textContent = data.username;
         if (firstNameElement) firstNameElement.value = data.firstName;
@@ -215,6 +271,13 @@ async function loadProfileData() {
         if (isActive) {
             isActive.checked = data.isActive === 'true'; // Set checkbox based on `isActive` value
         }
+        if (notification) {
+            notification.checked = data.notification === 'true'; // Set checkbox based on `notification` value
+        }
+        if (isAuthorize) {
+            isAuthorize.checked = data.twoFactors === 'true';
+        }
+
 
         await loadProfileActivity("activity-list", 3);
     } catch (error) {
@@ -1119,6 +1182,26 @@ document.addEventListener('change', function (event) {
         } else {
             console.log('User is locked');
             lockUser();
+        }
+    }
+    const formEmailNotificationElement = event.target.closest('#formEmailNotification');
+    if (formEmailNotificationElement) {
+        if (formEmailNotificationElement.checked) {
+            console.log('Email notifications are enabled');
+            updateNotification(true);
+        } else {
+            console.log('Email notifications are disabled');
+            updateNotification(false);
+        }
+    }
+    const formTwoFactorsElement = event.target.closest('#formTwoFactors');
+    if (formTwoFactorsElement) {
+        if (formTwoFactorsElement.checked) {
+            console.log('TwoFactors are enabled');
+            twoFactors(true);
+        } else {
+            console.log('TwoFactors are disabled');
+            twoFactors(false);
         }
     }
 });

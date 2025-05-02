@@ -90,7 +90,7 @@ public class ChatController {
         User user = userService.getAuthenticatedUser();
         Optional<Chat> chat = chatService.updateChat(name);
         if (chat.isPresent()) {
-            activityService.addActivity("User is locked", user.getUserID(), new Date());
+            activityService.addActivity("Create Chat", user.getUserID(), new Date());
             return ResponseEntity.ok(chat.get());
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");

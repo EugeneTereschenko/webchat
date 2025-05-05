@@ -2,12 +2,15 @@ package com.example.webchat.controller;
 
 import com.example.webchat.dto.UserDTO;
 import com.example.webchat.model.User;
+import com.example.webchat.service.EmailNotificationService;
+import com.example.webchat.service.TwoFactorAuthService;
 import com.example.webchat.service.UserService;
 import com.example.webchat.service.impl.ActivityService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.mapping.Map;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
@@ -25,6 +28,8 @@ public class UserController {
 
     private final UserService userService;
     private final ActivityService activityService;
+    private final TwoFactorAuthService twoFactorAuthService;
+    private final EmailNotificationService emailService;
 
 
 
@@ -46,26 +51,51 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+
     @PostMapping("api/login")
     public ResponseEntity<HashMap<String, String>> login(@Valid @RequestBody UserDTO userDTO) {
-        // Perform login logic here
-        // For example, check the username and password against the database
         HashMap<String, String> response = new HashMap<>();
         User user = userService.getUserByEmail(userDTO.getEmail());
+
         if (user == null) {
             response.put("message", "Access denied");
             response.put("success", "false");
             return ResponseEntity.badRequest().body(response);
         }
-        log.info("request for User controller. login: " + userDTO.getPassword() + " " + userDTO.getUsername());
-        String token = userService.authenticateUser(Optional.ofNullable(user.getUsername()).orElse(userDTO.getUsername()), userDTO.getPassword());
-        log.info("token: " + token);
-        log.info("Login attempt for user: " + userDTO.toString());
-        response.put("token", token);
-        response.put("userID", String.valueOf(user.getUserID()));
-        response.put("message", "User logged in successfully");
-        response.put("success", "true");
-        activityService.addActivity("User login", user.getUserID(), new Date());
+
+        if (user.isTwoFactorEnabled()) {
+            if (!isTwoFactorCodeValid(user, userDTO.getUserCode())) {
+                response.put("message", "Invalid two-factor authentication code");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+        }
+
+        response = createResponse(userDTO, user);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("api/check-auth")
+    public ResponseEntity<HashMap<String, String>> checkAuth(@Valid @RequestBody UserDTO userDTO) {
+        HashMap<String, String> response = new HashMap<>();
+        User user = userService.getUserByEmail(userDTO.getEmail());
+        log.info("Check auth request: " + userDTO.toString());
+        if (user == null) {
+            response.put("message", "User not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        if (user.isTwoFactorEnabled()) {
+            log.info("User has two-factor authentication enabled");
+            response.put("twofactor", "true");
+            String userCode = twoFactorAuthService.generateCode(user.getSalt());
+            emailService.sendEmail(user.getEmail(), "Your Two-Factor Code", "Your code is: " + userCode);
+            response.put("success", "true");
+            response.put("message", "Two-factor code sent to your email");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+        response.put("success", "false");
+        response.put("twofactor", "false");
+        response.put("message", "User is authenticated by default");
         return ResponseEntity.ok(response);
     }
 
@@ -122,6 +152,28 @@ public class UserController {
         } catch (Exception e) {
             response.put("message", "Failed to update two-factor" + e.getMessage());
             return ResponseEntity.status(401).body(response);
+        }
+    }
+
+    private HashMap<String, String> createResponse(UserDTO userDTO, User user) {
+        HashMap<String, String> response = new HashMap<>();
+        activityService.addActivity("User login", user.getUserID(), new Date());
+        log.info("request for User controller. login: " + userDTO.getPassword() + " " + userDTO.getUsername());
+        String token = userService.authenticateUser(Optional.ofNullable(user.getUsername()).orElse(userDTO.getUsername()), userDTO.getPassword());
+        log.info("token: " + token);
+        log.info("Login attempt for user: " + userDTO.toString());
+        response.put("token", token);
+        response.put("userID", String.valueOf(user.getUserID()));
+        response.put("message", "User logged in successfully");
+        response.put("success", "true");
+        return response;
+    }
+
+    private boolean isTwoFactorCodeValid(User user, String userCode) {
+        try {
+            return twoFactorAuthService.verifyCode(user.getSecretKey(), Integer.parseInt(userCode));
+        } catch (NumberFormatException e) {
+            return false;
         }
     }
 

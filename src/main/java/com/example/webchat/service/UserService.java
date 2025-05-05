@@ -36,6 +36,7 @@ public class UserService {
     private final UserDetailsService userDetailsService;
     private final JwtUtil jwtUtil;
     private final RoleRepository roleRepo;
+    private final TwoFactorAuthService twoFactorAuthService;
 
 
     public User saveUser(User user) {
@@ -232,15 +233,22 @@ public class UserService {
         return newToken;
     }
 
-    public void twoFactors(String twoFactors){
+    public void twoFactors(String twoFactors) {
         User user = getAuthenticatedUser();
         if (user == null) {
             throw new UsernameNotFoundException("Authenticated user not found");
         }
-        user.setTwoFactorEnabled(Optional.ofNullable(twoFactors)
-                .map(Boolean::parseBoolean)
-                .orElse(false));
 
+        boolean isTwoFactorEnabled = Optional.ofNullable(twoFactors)
+                .map(Boolean::parseBoolean)
+                .orElse(false);
+
+        if (isTwoFactorEnabled && user.getSecretKey() == null) {
+            //String secretKey = twoFactorAuthService.generateSecretKey();
+            user.setSecretKey(user.getSalt());
+        }
+
+        user.setTwoFactorEnabled(isTwoFactorEnabled);
         userRepository.save(user);
     }
 }

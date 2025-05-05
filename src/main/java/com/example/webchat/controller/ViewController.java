@@ -79,4 +79,11 @@ public class ViewController {
         return new ModelAndView("chat");
     }
 
+    @GetMapping("/twofactor")
+    public ModelAndView twofactor() {
+
+        log.info("Two factor attempt for user: get two factor ");
+        return new ModelAndView("twofasecurity");
+    }
+
 }

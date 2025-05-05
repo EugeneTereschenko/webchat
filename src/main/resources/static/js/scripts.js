@@ -52,6 +52,38 @@ function setProfileElements() {
                                 "</section>";
 }
 
+async function checkAuth() {
+    const token = localStorage.getItem('authToken'); // Retrieve the token from localStorage
+
+    if (!token) {
+        console.error('No auth token found');
+        return { success: false, message: 'No auth token found' };
+    }
+
+    try {
+        const response = await fetch('/api/check-auth', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // Include the token in the Authorization header
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Error:', errorData.message);
+            return { success: false, message: errorData.message };
+        }
+
+        const data = await response.json();
+        console.log('Success:', data.message);
+        return { success: true, data };
+    } catch (error) {
+        console.error('Request failed:', error);
+        return { success: false, message: 'Request failed' };
+    }
+}
+
 async function twoFactors(twoFactorsEnable) {
     const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
 

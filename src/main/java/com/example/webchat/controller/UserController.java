@@ -2,6 +2,7 @@ package com.example.webchat.controller;
 
 import com.example.webchat.dto.UserDTO;
 import com.example.webchat.model.User;
+import com.example.webchat.security.JwtUtil;
 import com.example.webchat.service.EmailNotificationService;
 import com.example.webchat.service.TwoFactorAuthService;
 import com.example.webchat.service.UserService;
@@ -30,6 +31,7 @@ public class UserController {
     private final ActivityService activityService;
     private final TwoFactorAuthService twoFactorAuthService;
     private final EmailNotificationService emailService;
+    private final JwtUtil jwtUtil;
 
 
 
@@ -63,14 +65,34 @@ public class UserController {
             return ResponseEntity.badRequest().body(response);
         }
 
+        response = createResponse(userDTO, user);
+        return ResponseEntity.ok(response);
+    }
+
+
+    @PostMapping("api/verify")
+    public ResponseEntity<HashMap<String, String>> verifyOtp(@Valid @RequestBody UserDTO userDTO) {
+        HashMap<String, String> response = new HashMap<>();
+        User user = userService.getUserByEmail(userDTO.getEmail());
+        log.info("verify otp login");
         if (user.isTwoFactorEnabled()) {
             if (!isTwoFactorCodeValid(user, userDTO.getUserCode())) {
+                log.info("Invalid otp login");
                 response.put("message", "Invalid two-factor authentication code");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
         }
+        log.info("Create response");
+        activityService.addActivity("User login", user.getUserID(), new Date());
 
-        response = createResponse(userDTO, user);
+        String token = jwtUtil.generateToken(user.getUsername());
+        log.info("token: " + token);
+        log.info("Login attempt for user: " + userDTO.toString());
+        response.put("token", token);
+        response.put("userID", String.valueOf(user.getUserID()));
+        response.put("message", "User logged in successfully");
+        response.put("success", "true");
+
         return ResponseEntity.ok(response);
     }
 
@@ -91,7 +113,7 @@ public class UserController {
             emailService.sendEmail(user.getEmail(), "Your Two-Factor Code", "Your code is: " + userCode);
             response.put("success", "true");
             response.put("message", "Two-factor code sent to your email");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            return ResponseEntity.ok(response);
         }
         response.put("success", "false");
         response.put("twofactor", "false");

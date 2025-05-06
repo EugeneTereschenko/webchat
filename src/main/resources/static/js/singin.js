@@ -99,20 +99,20 @@ async function sendLoginFormData(email, password) {
 }
 
 
-async function sendLoginFormDataOtp(email, password, userCode) {
-    if (!email || !password) {
+async function sendLoginFormDataOtp(email, userCode) {
+    if (!email || !userCode) {
         alert('Please fill in both email and password');
         return { success: false, message: 'Email and password are required' };
     }
 
     const user = {
         email: email,
-        password: password,
         userCode: userCode
     };
 
     try {
-        const response = await fetch('/chat/api/login', {
+        console.log('Sending login data:', user);
+        const response = await fetch('/chat/api/verify', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -123,6 +123,7 @@ async function sendLoginFormDataOtp(email, password, userCode) {
         const data = await response.json();
 
         if (response.ok && data.success) {
+            console.log('Login successful:', data);
             return { success: true, data };
         } else {
             return { success: false, message: data.message || 'Login failed' };
@@ -159,38 +160,7 @@ async function getTwoFactorsForm() {
         return { success: false, message: 'Request failed' };
     }
 }
-/*
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.querySelector('#loginForm');
-    form.addEventListener('submit', function (event) {
-        event.preventDefault();
 
-        const email = document.querySelector('input[id="typeEmailX"]').value;
-        const password = document.querySelector('input[id="typePasswordX"]').value;
-        checkAuth();
-        sendLoginFormData(email, password)
-            .then(response => {
-                if (response.success) {
-                    handleLoginSuccess(response.data);
-                } else {
-                    checkAuth()
-                        .then(authResponse => {
-                            if (authResponse.success) {
-                                getTwoFactorsForm();
-                            } else {
-                                alert(authResponse.message);
-                            }
-                        });
-                    //alert(response.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred. Please try again.');
-            });
-    });
-});
-*/
 
 function getTwoFactorCode() {
     let code = '';
@@ -215,10 +185,6 @@ if (twoFactorCode) {
 document.addEventListener('click', function (event) {
     console.log("Event target:", event.target);
 
-    user = {
-        email: document.querySelector('input[id="typeEmailX"]').value,
-        password: document.querySelector('input[id="typePasswordX"]').value
-    }
 
     const loginButtonElement = event.target.closest('#loginButton');
     if (loginButtonElement) {
@@ -227,46 +193,50 @@ document.addEventListener('click', function (event) {
         const email = document.querySelector('input[id="typeEmailX"]').value;
         const password = document.querySelector('input[id="typePasswordX"]').value;
 
-        checkAuth(user.email, user.password)
-            .then(authResponse => {
+
+        localStorage.setItem('email', email); // Store the email
+        checkAuth(email, password)
+        .then(authResponse => {
             console.log("Auth response:", authResponse);
-                if (authResponse.twofactor) {
-                    console.log("load two factor form");
-                    getTwoFactorsForm();
-                    const userCode = getTwoFactorCode();
-                    sendLoginFormDataOtp(email, password, userCode)
-                        .then(response => {
-                            if (response.success) {
-                                handleLoginSuccess(response.data);
-                            } else {
-                                alert(response.message);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            alert('An error occurred. Please try again.');
-                        });
+            console.log("authResponse.twofactor response:", authResponse.data.twofactor); // Access the 'data' property
+            if (authResponse.data.twofactor === 'true') { // Explicitly check for 'true'
+                console.log("authResponse.twofactor response:", authResponse.data.twofactor);
+                console.log("load two factor form");
+                getTwoFactorsForm();
                 } else {
-                    sendLoginFormData(email, password)
-                        .then(response => {
+                sendLoginFormData(email, password)
+                    .then(response => {
                         if (response.success) {
                             handleLoginSuccess(response.data);
                         } else {
                             alert(response.message);
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            alert('An error occurred. Please try again.');
-                            });
                         }
-            });
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred. Please try again.');
+                    });
+            }
+        });
         }
 
 
         const twoFactorButtonElement = event.target.closest('#twoFactorButton');
         if (twoFactorButtonElement) {
-
+            const userCode = getTwoFactorCode();
+            const email = localStorage.getItem('email');
+            sendLoginFormDataOtp(email, userCode)
+                .then(response => {
+                if (response.success) {
+                handleLoginSuccess(response.data);
+                } else {
+                    alert(response.message);
+                }
+                })
+                .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+                });
         }
 
 });

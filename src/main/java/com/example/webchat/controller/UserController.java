@@ -4,6 +4,7 @@ import com.example.webchat.dto.UserDTO;
 import com.example.webchat.model.User;
 import com.example.webchat.security.JwtUtil;
 import com.example.webchat.service.EmailNotificationService;
+import com.example.webchat.service.QRCodeGenerator;
 import com.example.webchat.service.TwoFactorAuthService;
 import com.example.webchat.service.UserService;
 import com.example.webchat.service.impl.ActivityService;
@@ -31,6 +32,7 @@ public class UserController {
     private final ActivityService activityService;
     private final TwoFactorAuthService twoFactorAuthService;
     private final EmailNotificationService emailService;
+    private final QRCodeGenerator qrCodeGenerator;
     private final JwtUtil jwtUtil;
 
 
@@ -110,7 +112,15 @@ public class UserController {
             log.info("User has two-factor authentication enabled");
             response.put("twofactor", "true");
             String userCode = twoFactorAuthService.generateCode(user.getSalt());
-            emailService.sendEmail(user.getEmail(), "Your Two-Factor Code", "Your code is: " + userCode);
+            String qrCodeBase64 = null;
+            String body = null;
+            try {
+                qrCodeBase64 = QRCodeGenerator.generateQRCode("otpauth://totp/user code " + userCode);
+                body = "Your code is: " + userCode + "\n\nPlease find your QR code attached.";
+                emailService.sendEmailWithAttachment("test@example.com", "Your QR Code", body, qrCodeBase64);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
             response.put("success", "true");
             response.put("message", "Two-factor code sent to your email");
             return ResponseEntity.ok(response);

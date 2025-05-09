@@ -3,6 +3,9 @@ package com.example.webchat.service;
 import org.jboss.aerogear.security.otp.Totp;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
+import java.nio.file.Files;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class TwoFactorAuthServiceTest {
@@ -37,5 +40,23 @@ class TwoFactorAuthServiceTest {
         System.out.println("Is the code valid? " + isValid);
 
         assertTrue(isValid, "The TOTP code should be valid.");
+    }
+
+    @Test
+    void testGenerateQRCodeToFile() throws Exception {
+
+        String qrCodeData = "otpauth://totp/user code";
+        String filePath = "QRCode.png";
+
+        // Act
+        QRCodeGenerator.generateQRCodeToFile(qrCodeData, filePath);
+
+        // Assert
+        File qrCodeFile = new File(filePath);
+        assertTrue(qrCodeFile.exists(), "QR Code file should exist");
+        assertTrue(Files.size(qrCodeFile.toPath()) > 0, "QR Code file should not be empty");
+
+        // Cleanup
+        // qrCodeFile.delete();
     }
 }

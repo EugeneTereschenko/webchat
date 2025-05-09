@@ -36,6 +36,7 @@ public class UserService {
     private final UserDetailsService userDetailsService;
     private final JwtUtil jwtUtil;
     private final RoleRepository roleRepo;
+    private final TwoFactorAuthService twoFactorAuthService;
 
 
     public User saveUser(User user) {
@@ -88,6 +89,7 @@ public class UserService {
         userNew.setEmail(Optional.ofNullable(registrationDTO.getEmail()).orElse(""));
         passwordSalt = Optional.ofNullable(registrationDTO.getPassword()).orElse(generatePassayPassword(8));
         userNew.setPassword(passwordEncoder.encode(passwordSalt));
+        userNew.setTwoFactorEnabled(false);
         userNew.setSalt(passwordSalt);
 
         log.info(userNew.toString() + " " + userNew.getUsername() + " " + userNew.getPassword());
@@ -229,5 +231,24 @@ public class UserService {
 
 
         return newToken;
+    }
+
+    public void twoFactors(String twoFactors) {
+        User user = getAuthenticatedUser();
+        if (user == null) {
+            throw new UsernameNotFoundException("Authenticated user not found");
+        }
+
+        boolean isTwoFactorEnabled = Optional.ofNullable(twoFactors)
+                .map(Boolean::parseBoolean)
+                .orElse(false);
+
+        if (isTwoFactorEnabled && user.getSecretKey() == null) {
+            //String secretKey = twoFactorAuthService.generateSecretKey();
+            user.setSecretKey(user.getSalt());
+        }
+
+        user.setTwoFactorEnabled(isTwoFactorEnabled);
+        userRepository.save(user);
     }
 }

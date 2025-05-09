@@ -6,9 +6,11 @@ import com.example.webchat.model.Message;
 import com.example.webchat.model.User;
 import com.example.webchat.service.ImageService;
 import com.example.webchat.service.UserService;
+import com.example.webchat.service.impl.ActivityService;
 import com.example.webchat.service.impl.ChatService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,10 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.validation.Valid;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @AllArgsConstructor
@@ -29,30 +28,7 @@ public class ChatController {
 
     private final UserService userService;
     private final ChatService chatService;
-
-
-    //@PreAuthorize("userService.isAuthenticated()")
-    @GetMapping("/")
-    public String home(Model model) {
-
-        User user = userService.getAuthenticatedUser();
-        if (user == null) {
-            System.out.println("User is not authenticated");
-            return "redirect:/login"; // Redirect to login page if user is not authenticated
-        }
-
-        return "index";
-    }
-
-
-    @GetMapping("/chat")
-    public ModelAndView getChat() {
-        // Perform login logic here
-        // For example, you can save the username in the session or perform authentication
-
-        log.info("Login attempt for user: get chat ");
-        return new ModelAndView("chat");
-    }
+    private final ActivityService activityService;
 
     @GetMapping("/api/users")
     @ResponseBody
@@ -110,9 +86,15 @@ public class ChatController {
     }
 
     @PostMapping("/api/chatCreate")
-    public ResponseEntity<Chat> createChat(@RequestParam String name) {
+    public ResponseEntity<?> createChat(@RequestParam String name) {
+        User user = userService.getAuthenticatedUser();
         Optional<Chat> chat = chatService.updateChat(name);
-        return ResponseEntity.ok(chat.get());
+        if (chat.isPresent()) {
+            activityService.addActivity("Create Chat", user.getUserID(), new Date());
+            return ResponseEntity.ok(chat.get());
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");
+        }
     }
 
 

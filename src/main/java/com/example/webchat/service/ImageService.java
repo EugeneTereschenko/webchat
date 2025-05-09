@@ -27,8 +27,11 @@ public class ImageService {
         return imageRepository.findById(id).orElseThrow(() -> new ImageNotFoundException("Image not found"));
     }
 
-    public Image getImageByUserId(Long userId) {
+    public Optional<Image> getImageByUserId(Long userId) {
         Optional<Image> image = imageRepository.findByUserId(userId);
-        return image.orElseThrow(() -> new ImageNotFoundException("Image not found"));
+        if (image.isEmpty()) {
+            return Optional.of(new Image());
+        }
+        return image;
     }
 }

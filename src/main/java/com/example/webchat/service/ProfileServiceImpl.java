@@ -20,6 +20,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository profileRepository;
     private final UserService userService;
+    private final EmailNotificationService emailNotificationService;
 
     public void saveProfile(ProfileDTO profileDTO) {
         Profile profile = new Profile.Builder()
@@ -30,6 +31,9 @@ public class ProfileServiceImpl implements ProfileService {
                 .bio(Optional.ofNullable(profileDTO.getBio()).orElse("Passionate about solving complex problems through simple and elegant designs."))
                 .address(Optional.ofNullable(profileDTO.getAddress()).orElse("123 Main St, Springfield, USA"))
                 .phoneNumber(Optional.ofNullable(profileDTO.getPhoneNumber()).orElse("123-456-7890"))
+                .notification(Optional.ofNullable(profileDTO.getNotification())
+                        .map(Boolean::parseBoolean)
+                        .orElse(false))
                 .nameOfCard(Optional.ofNullable(profileDTO.getNameOfCard()).orElse("VISA"))
                 .cardType(Optional.ofNullable(profileDTO.getCardType()).orElse("debt"))
                 .cardNumber(Optional.ofNullable(profileDTO.getCardNumber()).orElse("1234-5678-9012-3456"))
@@ -68,6 +72,9 @@ public class ProfileServiceImpl implements ProfileService {
                 .bio(Optional.ofNullable(profileDTO.getBio()).orElse("Passionate about solving complex problems through simple and elegant designs."))
                 .address(Optional.ofNullable(profileDTO.getAddress()).orElse("123 Main St, Springfield, USA"))
                 .phoneNumber(Optional.ofNullable(profileDTO.getPhoneNumber()).orElse("123-456-7890"))
+                .notification(Optional.ofNullable(profileDTO.getNotification())
+                        .map(Boolean::parseBoolean)
+                        .orElse(false))
                 .nameOfCard(Optional.ofNullable(profileDTO.getNameOfCard()).orElse("VISA"))
                 .cardType(Optional.ofNullable(profileDTO.getCardType()).orElse("debt"))
                 .cardNumber(Optional.ofNullable(profileDTO.getCardNumber()).orElse("1234-5678-9012-3456"))
@@ -85,7 +92,7 @@ public class ProfileServiceImpl implements ProfileService {
     public Optional<ProfileDTO> getProfileByUserId(Long userId) {
         List<Profile> profiles = profileRepository.findAllByUserId(userId);
         if (profiles.isEmpty()) {
-            return Optional.empty();
+            return Optional.of(new ProfileDTO());
         }
         Profile profile = profiles.get(profiles.size() - 1);
         log.info("Get profile by userId: " + userId);
@@ -100,6 +107,7 @@ public class ProfileServiceImpl implements ProfileService {
         profileDTO.setBio(profile.getBio());
         profileDTO.setAddress(profile.getAddress());
         profileDTO.setPhoneNumber(profile.getPhoneNumber());
+        profileDTO.setNotification(String.valueOf(profile.getNotification()));
         profileDTO.setNameOfCard(profile.getNameOfCard());
         profileDTO.setCardType(profile.getCardType());
         profileDTO.setCardNumber(profile.getCardNumber());
@@ -124,6 +132,7 @@ public class ProfileServiceImpl implements ProfileService {
             profileDTO.setBio(profile.getBio());
             profileDTO.setAddress(profile.getAddress());
             profileDTO.setPhoneNumber(profile.getPhoneNumber());
+            profileDTO.setNotification(String.valueOf(profile.getNotification()));
             profileDTO.setNameOfCard(profile.getNameOfCard());
             profileDTO.setCardType(profile.getCardType());
             profileDTO.setCardNumber(profile.getCardNumber());
@@ -133,5 +142,21 @@ public class ProfileServiceImpl implements ProfileService {
         }).toList();
         log.info(profileDTOs.toString() + " all profiles");
         return profileDTOs;
+    }
+
+    public boolean updateNotification(String name, Boolean notification) {
+        User user = userService.getUserByUsername(name);
+        List<Profile> profiles = profileRepository.findAllByUserId(user.getUserID());
+        if (profiles.isEmpty()) {
+            return false;
+        }
+        Profile profile = profiles.get(profiles.size() - 1);
+        if (profile == null) {
+            return false;
+        }
+        profile.setNotification(notification);
+        profileRepository.save(profile);
+        emailNotificationService.sendEmail(user.getEmail(), "Notification Update", "This is the email body.");
+        return true;
     }
 }

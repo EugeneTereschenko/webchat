@@ -116,7 +116,7 @@
                                                                 security</p>
                                                         </div>
                                                         <div class="form-check form-switch">
-                                                            <input class="form-check-input" type="checkbox" checked>
+                                                            <input class="form-check-input" type="checkbox" id="formTwoFactors" checked>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -132,7 +132,7 @@
                                                             </p>
                                                         </div>
                                                         <div class="form-check form-switch">
-                                                            <input class="form-check-input" type="checkbox" checked>
+                                                            <input class="form-check-input" type="checkbox" id="formEmailNotification" checked>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -159,17 +159,7 @@
                                     <!-- Recent Activity -->
                                     <div>
                                         <h5 class="mb-4">Recent Activity</h5>
-                                        <div class="activity-item mb-3">
-                                            <h6 class="mb-1">Updated profile picture</h6>
-                                            <p class="text-muted small mb-0">2 hours ago</p>
-                                        </div>
-                                        <div class="activity-item mb-3">
-                                            <h6 class="mb-1">Changed password</h6>
-                                            <p class="text-muted small mb-0">Yesterday</p>
-                                        </div>
-                                        <div class="activity-item">
-                                            <h6 class="mb-1">Updated billing information</h6>
-                                            <p class="text-muted small mb-0">3 days ago</p>
+                                        <div id="activity-list">
                                         </div>
                                     </div>
                                 </div>
@@ -194,7 +184,7 @@
                 <input type="file" id="file-input" accept="image/*">
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="modalClosePicture">Close</button>
             </div>
         </div>
     </div>

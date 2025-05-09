@@ -44,6 +44,9 @@ public class Profile {
     @Column(name = "profile_picture", length = 255)
     private String profilePicture;
 
+    @Column(name = "notification", length = 255)
+    private Boolean notification;
+
     @Column(name = "card_type", length = 255)
     private String cardType;
 
@@ -71,6 +74,7 @@ public class Profile {
         this.staff = builder.staff;
         this.bio = builder.bio;
         this.profilePicture = builder.profilePicture;
+        this.notification = builder.notification;
         this.cardType = builder.cardType;
         this.nameOfCard = builder.nameOfCard;
         this.cardNumber = builder.cardNumber;
@@ -90,6 +94,7 @@ public class Profile {
         private String staff;
         private String bio;
         private String profilePicture;
+        private Boolean notification;
         private String cardType;
         private String nameOfCard;
         private String cardNumber;
@@ -143,6 +148,11 @@ public class Profile {
 
         public Builder profilePicture(String profilePicture) {
             this.profilePicture = profilePicture;
+            return this;
+        }
+
+        public Builder notification(Boolean notification) {
+            this.notification = notification;
             return this;
         }
 

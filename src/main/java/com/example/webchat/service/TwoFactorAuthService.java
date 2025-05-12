@@ -2,8 +2,8 @@ package com.example.webchat.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jboss.aerogear.security.otp.Totp;
-import org.jboss.aerogear.security.otp.api.Base32;
 import org.springframework.stereotype.Service;
+import org.apache.commons.codec.binary.Base32;
 
 @Slf4j
 @Service
@@ -41,5 +41,12 @@ public class TwoFactorAuthService {
             log.error("Failed to generate two-factor code: " + e.getMessage(), e);
             throw new RuntimeException("Invalid salt for two-factor authentication", e);
         }
+    }
+
+    public String generateSecretKey() {
+        Base32 base32 = new Base32();
+        byte[] randomBytes = new byte[10]; // 10 bytes = 80 bits, suitable for Base32
+        new java.security.SecureRandom().nextBytes(randomBytes);
+        return base32.encodeToString(randomBytes);
     }
 }

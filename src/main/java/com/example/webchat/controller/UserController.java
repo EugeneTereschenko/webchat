@@ -1,6 +1,7 @@
 package com.example.webchat.controller;
 
 import com.example.webchat.dto.UserDTO;
+import com.example.webchat.dto.UserResponseDTO;
 import com.example.webchat.model.User;
 import com.example.webchat.security.JwtUtil;
 import com.example.webchat.service.EmailNotificationService;
@@ -10,12 +11,9 @@ import com.example.webchat.service.UserService;
 import com.example.webchat.service.impl.ActivityService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.mapping.Map;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.validation.Valid;
 import java.util.Date;
@@ -30,72 +28,55 @@ public class UserController {
 
     private final UserService userService;
     private final ActivityService activityService;
-    private final TwoFactorAuthService twoFactorAuthService;
-    private final EmailNotificationService emailService;
-    private final QRCodeGenerator qrCodeGenerator;
-    private final JwtUtil jwtUtil;
 
 
 
     @PostMapping("api/singup")
-    public ResponseEntity<HashMap<String, String>> register(@Valid @RequestBody UserDTO userDTO) {
-
+    public ResponseEntity<UserResponseDTO> register(@Valid @RequestBody UserDTO userDTO) {
+        UserResponseDTO userResponseDTO = new UserResponseDTO();
         User existingUser = userService.getUserByEmail(userDTO.getEmail());
         if (existingUser != null) {
-            HashMap<String, String> response = new HashMap<>();
-            response.put("message", "User with this email already exists");
-            return ResponseEntity.badRequest().body(response);
+            userResponseDTO.setMessage("User with this email already exists");
+            return ResponseEntity.badRequest().body(userResponseDTO);
         }
 
         User user = userService.registerUser(userDTO);
+        userService.createRoleIfExists("ROLE_USER");
+        userService.addRoleToUser(user.getUsername(), "ROLE_USER");
         log.info("Registering user: " + user.toString());
-        HashMap<String, String> response = new HashMap<>();
-        response.put("message", "User " + user.getUsername() + " registered successfully");
+        userResponseDTO.setMessage("User " + user.getUsername() + " registered successfully");
         activityService.addActivity("User registered", user.getUserID(), new Date());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(userResponseDTO);
     }
 
 
     @PostMapping("api/login")
-    public ResponseEntity<HashMap<String, String>> login(@Valid @RequestBody UserDTO userDTO) {
-        HashMap<String, String> response = new HashMap<>();
+    public ResponseEntity<UserResponseDTO> login(@Valid @RequestBody UserDTO userDTO) {
+        UserResponseDTO userResponseDTO = new UserResponseDTO();
         User user = userService.getUserByEmail(userDTO.getEmail());
-
         if (user == null) {
-            response.put("message", "Access denied");
-            response.put("success", "false");
-            return ResponseEntity.badRequest().body(response);
+            userResponseDTO.setMessage("Access denied");
+            userResponseDTO.setSuccess("false");
+            return ResponseEntity.badRequest().body(userResponseDTO);
         }
 
-        response = createResponse(userDTO, user);
-        return ResponseEntity.ok(response);
+        userResponseDTO = createResponse(userDTO, user);
+        return ResponseEntity.ok(userResponseDTO);
     }
 
 
     @PostMapping("api/verify")
-    public ResponseEntity<HashMap<String, String>> verifyOtp(@Valid @RequestBody UserDTO userDTO) {
-        HashMap<String, String> response = new HashMap<>();
+    public ResponseEntity<UserResponseDTO> verifyOtp(@Valid @RequestBody UserDTO userDTO) {
         User user = userService.getUserByEmail(userDTO.getEmail());
-        log.info("verify otp login");
-        if (user.isTwoFactorEnabled()) {
-            if (!isTwoFactorCodeValid(user, userDTO.getUserCode())) {
-                log.info("Invalid otp login");
-                response.put("message", "Invalid two-factor authentication code");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-            }
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new UserResponseDTO("User not found", "false"));
         }
-        log.info("Create response");
-        activityService.addActivity("User login", user.getUserID(), new Date());
-
-        String token = jwtUtil.generateToken(user.getUsername());
-        log.info("token: " + token);
-        log.info("Login attempt for user: " + userDTO.toString());
-        response.put("token", token);
-        response.put("userID", String.valueOf(user.getUserID()));
-        response.put("message", "User logged in successfully");
-        response.put("success", "true");
-
-        return ResponseEntity.ok(response);
+        UserResponseDTO userResponseDTO = userService.verifyOtpAndLogin(user, userDTO);
+        log.info("Verify OTP request userResponseDTO: " + userResponseDTO.toString());
+        if (userResponseDTO.getSuccess() == null || userResponseDTO.getSuccess().equals("false")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(userResponseDTO);
+        }
+        return ResponseEntity.ok(userResponseDTO);
     }
 
     @PostMapping("api/check-auth")
@@ -111,16 +92,7 @@ public class UserController {
         if (user.isTwoFactorEnabled()) {
             log.info("User has two-factor authentication enabled");
             response.put("twofactor", "true");
-            String userCode = twoFactorAuthService.generateCode(user.getSalt());
-            String qrCodeBase64 = null;
-            String body = null;
-            try {
-                qrCodeBase64 = QRCodeGenerator.generateQRCode("otpauth://totp/user code " + userCode);
-                body = "Your code is: " + userCode + "\n\nPlease find your QR code attached.";
-                emailService.sendEmailWithAttachment("test@example.com", "Your QR Code", body, qrCodeBase64);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            userService.prepareAndSendTwoFactorEmailMessage(user);
             response.put("success", "true");
             response.put("message", "Two-factor code sent to your email");
             return ResponseEntity.ok(response);
@@ -132,24 +104,23 @@ public class UserController {
     }
 
     @PutMapping("api/change-password")
-    public ResponseEntity<HashMap<String, String>> changePassword(@RequestBody UserDTO userDTO) {
-
-        HashMap<String, String> response = new HashMap<>();
+    public ResponseEntity<UserResponseDTO> changePassword(@RequestBody UserDTO userDTO) {
+        UserResponseDTO userResponseDTO = new UserResponseDTO();
         log.info("Change password request: " + userDTO.toString());
         if (userDTO.getPassword() == null || userDTO.getPassword().isEmpty() || userDTO.getNewPassword() == null || userDTO.getNewPassword().isEmpty()) {
-            response.put("message", "Current password or new password is missing");
-            return ResponseEntity.badRequest().body(response);
+            userResponseDTO.setMessage("Current password or new password is missing");
+            return ResponseEntity.badRequest().body(userResponseDTO);
         }
 
         try {
             userService.changePassword(userDTO.getPassword(), userDTO.getNewPassword());
-            response.put("message", "Password changed successfully");
+            userResponseDTO.setMessage("Password changed successfully");
             User user = userService.getAuthenticatedUser();
             activityService.addActivity("Change password", user.getUserID(), new Date());
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(userResponseDTO);
         } catch (Exception e) {
-            response.put("message", "Failed to change password: " + e.getMessage());
-            return ResponseEntity.status(401).body(response);
+            userResponseDTO.setMessage("Failed to change password: " + e.getMessage());
+            return ResponseEntity.status(401).body(userResponseDTO);
         }
     }
 
@@ -175,38 +146,31 @@ public class UserController {
     }
 
     @GetMapping("api/twoFactors")
-    public ResponseEntity<HashMap<String, String>> twoFactorAuthentication(@RequestParam String twoFactors) {
-        HashMap<String, String> response = new HashMap<>();
+    public ResponseEntity<UserResponseDTO> twoFactorAuthentication(@RequestParam String twoFactors) {
+        UserResponseDTO userResponseDTO = new UserResponseDTO();
         try {
             userService.twoFactors(twoFactors);
-            response.put("message", "Two-factor update successfully");
-            return ResponseEntity.ok(response);
+            userResponseDTO.setMessage("Two-factor update successfully");
+            return ResponseEntity.ok(userResponseDTO);
         } catch (Exception e) {
-            response.put("message", "Failed to update two-factor" + e.getMessage());
-            return ResponseEntity.status(401).body(response);
+            userResponseDTO.setMessage("Failed to update two-factor" + e.getMessage());
+            return ResponseEntity.status(401).body(userResponseDTO);
         }
     }
 
-    private HashMap<String, String> createResponse(UserDTO userDTO, User user) {
-        HashMap<String, String> response = new HashMap<>();
+    private UserResponseDTO createResponse(UserDTO userDTO, User user) {
+        UserResponseDTO userResponseDTO = new UserResponseDTO();
         activityService.addActivity("User login", user.getUserID(), new Date());
-        log.info("request for User controller. login: " + userDTO.getPassword() + " " + userDTO.getUsername());
+        log.debug("request for User controller. login: " + userDTO.getUsername());
         String token = userService.authenticateUser(Optional.ofNullable(user.getUsername()).orElse(userDTO.getUsername()), userDTO.getPassword());
         log.info("token: " + token);
-        log.info("Login attempt for user: " + userDTO.toString());
-        response.put("token", token);
-        response.put("userID", String.valueOf(user.getUserID()));
-        response.put("message", "User logged in successfully");
-        response.put("success", "true");
-        return response;
-    }
+        log.debug("Login attempt for user: " + userDTO.toString());
+        userResponseDTO.setToken(token);
+        userResponseDTO.setUserID(String.valueOf(user.getUserID()));
+        userResponseDTO.setMessage("User logged in successfully");
+        userResponseDTO.setSuccess("true");
 
-    private boolean isTwoFactorCodeValid(User user, String userCode) {
-        try {
-            return twoFactorAuthService.verifyCode(user.getSecretKey(), Integer.parseInt(userCode));
-        } catch (NumberFormatException e) {
-            return false;
-        }
+        return userResponseDTO;
     }
 
 }

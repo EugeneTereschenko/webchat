@@ -1,6 +1,7 @@
 package com.example.webchat.service;
 
 import com.example.webchat.dto.UserDTO;
+import com.example.webchat.dto.UserResponseDTO;
 import com.example.webchat.exception.UserBlockedException;
 import com.example.webchat.model.Role;
 import com.example.webchat.model.User;
@@ -12,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
 import org.passay.PasswordGenerator;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,6 +26,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,6 +41,8 @@ public class UserService {
     private final JwtUtil jwtUtil;
     private final RoleRepository roleRepo;
     private final TwoFactorAuthService twoFactorAuthService;
+    private final EmailNotificationService emailService;
+    private final ActivityServiceImpl activityService;
 
 
     public User saveUser(User user) {
@@ -64,12 +70,12 @@ public class UserService {
     }
 
     public boolean isAuthenticated() {
-        log.info("Checking if user is authenticated");
+        log.debug("Checking if user is authenticated");
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         log.info(authentication.getName() + " " + authentication.isAuthenticated());
         if (authentication == null || AnonymousAuthenticationToken.class.
                 isAssignableFrom(authentication.getClass())) {
-            log.info("User is not authenticated");
+            log.debug("User is not authenticated");
             return false;
         }
         return authentication.isAuthenticated();
@@ -92,17 +98,29 @@ public class UserService {
         userNew.setTwoFactorEnabled(false);
         userNew.setSalt(passwordSalt);
 
-        log.info(userNew.toString() + " " + userNew.getUsername() + " " + userNew.getPassword());
+        log.debug("create user" + userNew.getUsername());
         return userRepository.save(userNew);
     }
 
     public Role saveRole(Role role) {
-        log.info("Saving new user to the database", role.getName());
+        log.debug("Saving new user to the database", role.getName());
         return roleRepo.save(role);
     }
 
+    public Role createRoleIfExists(String roleName) {
+        log.debug("Checking if role exists: " + roleName);
+        Role existingRole = roleRepo.findByName(roleName);
+        if (existingRole != null) {
+            log.debug("Role already exists: " + roleName);
+            return existingRole;
+        }
+        Role role = new Role();
+        role.setName(roleName);
+        return saveRole(role);
+    };
+
     public void addRoleToUser(String username, String roleName) {
-        log.info("Adding role {} to user {}", roleName, username);
+        log.debug("Adding role {} to user {}", roleName, username);
         User user = userRepository.findByUsername(username);
         Role role = roleRepo.findByName(roleName);
         user.getRoles().add(role);
@@ -227,7 +245,7 @@ public class UserService {
 
         // Generate a new token for the updated username
         String newToken = jwtUtil.generateToken(newUsername);
-        log.info("New token generated for updated username: " + newToken);
+        log.debug("New token generated for updated username: " + newToken);
 
 
         return newToken;
@@ -244,11 +262,49 @@ public class UserService {
                 .orElse(false);
 
         if (isTwoFactorEnabled && user.getSecretKey() == null) {
-            //String secretKey = twoFactorAuthService.generateSecretKey();
-            user.setSecretKey(user.getSalt());
+            String secretKey = twoFactorAuthService.generateSecretKey();
+            user.setSecretKey(secretKey);
         }
 
         user.setTwoFactorEnabled(isTwoFactorEnabled);
         userRepository.save(user);
+    }
+
+
+    public void prepareAndSendTwoFactorEmailMessage(User user){
+        String userCode = twoFactorAuthService.generateCode(user.getSecretKey());
+        String qrCodeBase64 = null;
+        String body = null;
+        try {
+            qrCodeBase64 = QRCodeGenerator.generateQRCode("otpauth://totp/user code " + userCode);
+            body = "Your code is: " + userCode + "\n\nPlease find your QR code attached.";
+            emailService.sendEmailWithAttachment("test@example.com", "Your QR Code", body, qrCodeBase64);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    public UserResponseDTO verifyOtpAndLogin(User user, UserDTO userDTO) {
+        UserResponseDTO responseDTO = new UserResponseDTO();
+        log.info("Create response");
+        try {
+            boolean isOtpValid = twoFactorAuthService.verifyCode(user.getSecretKey(), Integer.parseInt(userDTO.getUserCode()));
+            if (isOtpValid) {
+                String token = jwtUtil.generateToken(user.getUsername());
+                responseDTO.setSuccess("true");
+                responseDTO.setMessage("OTP verified successfully");
+                responseDTO.setToken(token);
+                responseDTO.setUserID(String.valueOf(user.getUserID()));
+                activityService.addActivity("User login", user.getUserID(), new Date());
+            } else {
+                responseDTO.setSuccess("false");
+                responseDTO.setMessage("Invalid OTP");
+            }
+        } catch (Exception e) {
+            responseDTO.setSuccess("false");
+            responseDTO.setMessage("Error verifying OTP: " + e.getMessage());
+        }
+        return responseDTO;
     }
 }

@@ -21,80 +21,230 @@ function scrollToBottom() {
     messageContainer.scrollTop = messageContainer.scrollHeight;
 }
 
-function saveUsername() {
-    const username = document.getElementById("username").value;
-    setCookie("username", username, 7);
+function clearPanel() {
+    const panel = document.getElementById('panel');
+    if (panel) {
+        panel.innerHTML = ''; // Clear all existing content in the panel
+    } else {
+        console.error('Element with id "panel" not found.');
+    }
 }
 
-function fetchChatMessages() {
+function clearProfileContent() {
+    const content = document.getElementById('profile-content');
+    if (content) {
+        content.innerHTML = ''; // Clear all existing content in the profile section
+    } else {
+        console.error('Element with id "profile-content" not found.');
+    }
+}
+
+function setProfileElements() {
+    const profileContent = document.getElementById('profile-content');
+    profileContent.innerHTML = "<section style=\"background-color: #eee;\">" +
+                                    "<div class=\"container py-5\">" +
+                                        "<div class=\"row d-flex justify-content-center\">" +
+                                            "<div class=\"col-md-12 col-lg-10 col-xl-8\">" +
+                                                "<div id=\"log-info\"></div>" +
+                                            "</div>" +
+                                        "</div>" +
+                                    "</div>" +
+                                "</section>";
+}
+
+async function checkAuth() {
+    const token = localStorage.getItem('authToken'); // Retrieve the token from localStorage
+
+    if (!token) {
+        console.error('No auth token found');
+        return { success: false, message: 'No auth token found' };
+    }
+
+    try {
+        const response = await fetch('/api/check-auth', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // Include the token in the Authorization header
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Error:', errorData.message);
+            return { success: false, message: errorData.message };
+        }
+
+        const data = await response.json();
+        console.log('Success:', data.message);
+        return { success: true, data };
+    } catch (error) {
+        console.error('Request failed:', error);
+        return { success: false, message: 'Request failed' };
+    }
+}
+
+async function twoFactors(twoFactorsEnable) {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/api/twoFactors?twoFactors=${encodeURIComponent(twoFactorsEnable)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to update two-factor authentication: ${response.status}`);
+        }
+
+        const data = await response.json(); // Parse the response as JSON
+        console.log('Two-factor authentication updated successfully:', data);
+    } catch (error) {
+        console.error('Error updating two-factor authentication:', error);
+    }
+}
+
+async function updateNotification(notification) {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/updateNotification?notification=${notification}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to update notification: ${response.status}`);
+        }
+
+        const data = await response.json(); // Parse the response as JSON
+        console.log('Notification updated successfully:', data);
+    } catch (error) {
+        console.error('Error updating notification:', error);
+    }
+}
+
+async function fetchChatMessages() {
     const token = localStorage.getItem('authToken'); // Retrieve the auth token
-    chatName = document.getElementById('chat-name').value;
-    if (token) {
-        fetch(`/chat/api/chat?chatName=${encodeURIComponent(chatName)}`, {
+    const chatName = document.getElementById('chat-name').value;
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    if (!chatName) {
+        console.error('Chat name is required');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/api/chat?chatName=${encodeURIComponent(chatName)}`, {
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer ' + token
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            const messagesContainer = document.querySelector('.custom-background-message ul');
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch chat messages: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const messagesContainer = document.querySelector('.custom-background-message ul');
+        if (messagesContainer) {
             messagesContainer.innerHTML = '';
             data.forEach(message => {
                 const messageElement = document.createElement('li');
                 messageElement.className = 'list-group-item';
                 messageElement.innerHTML = `<p>${message.user}</p><p>${message.message}</p>`;
                 messagesContainer.appendChild(messageElement);
-                scrollToBottom();
             });
-            console.log('Fetched chat messages:', data);
-        })
-        .catch(error => {
-            console.error('Error fetching chat messages:', error);
+            scrollToBottom();
+        } else {
+            console.error('Messages container not found');
+        }
+
+        console.log('Fetched chat messages:', data);
+    } catch (error) {
+        console.error('Error fetching chat messages:', error);
+    }
+}
+
+
+async function fetchUser() {
+    const token = localStorage.getItem('authToken');
+    const chatName = document.getElementById('chat-name').value;
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/api/user?chatName=${encodeURIComponent(chatName)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
         });
-    } else {
-        console.error('No auth token found');
-    }
-}
 
+        if (!response.ok) {
+            throw new Error(`Failed to fetch user data: ${response.status}`);
+        }
 
-function fetchUser(){
-    const token = localStorage.getItem('authToken');
-    chatName = document.getElementById('chat-name').value;
-    if (token) {
-        fetch(`/chat/api/user?chatName=${encodeURIComponent(chatName)}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + token
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Fetched user data:', data);
+        const data = await response.json();
+        console.log('Fetched user data:', data);
 
-            const userMessageElement = document.querySelector('#message-user');
+        const userMessageElement = document.querySelector('#message-user');
+        if (userMessageElement) {
             userMessageElement.value = data.username;
-        })
-        .catch(error => console.error('Error fetching user data:', error));
-    } else {
-        console.error('No auth token found');
+        }
+    } catch (error) {
+        console.error('Error fetching user data:', error);
     }
 }
 
-function fetchUsers() {
+async function fetchUsers() {
     const token = localStorage.getItem('authToken');
-    chatName = document.getElementById('chat-name').value;
-    if (token) {
-        fetch(`/chat/api/users?chatName=${encodeURIComponent(chatName)}`, {
+    const chatName = document.getElementById('chat-name').value;
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/api/users?chatName=${encodeURIComponent(chatName)}`, {
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer ' + token
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Fetched user data:', data);
-            const usersContainer = document.querySelector('.custom-background-user ul');
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch users: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Fetched user data:', data);
+
+        const usersContainer = document.querySelector('.custom-background-user ul');
+        if (usersContainer) {
             usersContainer.innerHTML = '';
 
             data.forEach(user => {
@@ -103,16 +253,13 @@ function fetchUsers() {
                 userElement.innerHTML = `<p>${user}</p>`;
                 usersContainer.appendChild(userElement);
             });
-
-        })
-        .catch(error => console.error('Error fetching user data:', error));
-    } else {
-        console.error('No auth token found');
+        }
+    } catch (error) {
+        console.error('Error fetching user data:', error);
     }
 }
 
-
-function loadProfileData() {
+async function loadProfileData() {
     const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
 
     if (!token) {
@@ -120,47 +267,57 @@ function loadProfileData() {
         return;
     }
 
-    fetch('/chat/api/profile', {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
-        }
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.json(); // Parse the response as JSON
-        } else {
+    try {
+        const response = await fetch('/chat/api/profile', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
             throw new Error(`Failed to load profile data: ${response.status}`);
         }
-    })
-    .then(data => {
-        console.log('Profile data:', data);
-            const userNameElement = document.getElementById('profile-user-name');
-            const firstNameElement = document.getElementById('profile-firstName');
-            const lastNameElement = document.getElementById('profile-lastName');
-            const emailElement = document.getElementById('profile-email');
-            const phoneNumberElement = document.getElementById('profile-phone');
-            const bioElement = document.getElementById('profile-bio');
-            const staffElement = document.getElementById('profile-position');
-            const isActive = document.getElementById('formUserLock');
 
-            if (userNameElement) userNameElement.textContent = data.username;
-            if (firstNameElement) firstNameElement.value = data.firstName;
-            if (lastNameElement) lastNameElement.value = data.lastName;
-            if (emailElement) emailElement.value = data.email;
-            if (phoneNumberElement) phoneNumberElement.value = data.phoneNumber;
-            if (bioElement) bioElement.value = data.bio;
-            if (staffElement) staffElement.innerHTML = data.staff;
-                if (isActive) {
-                    isActive.checked = data.isActive === 'true'; // Set checkbox based on `isActive` value
-                }
-    })
-    .catch(error => {
+        const data = await response.json(); // Parse the response as JSON
+        console.log('Profile data:', data);
+
+        const userNameElement = document.getElementById('profile-user-name');
+        const firstNameElement = document.getElementById('profile-firstName');
+        const lastNameElement = document.getElementById('profile-lastName');
+        const emailElement = document.getElementById('profile-email');
+        const phoneNumberElement = document.getElementById('profile-phone');
+        const bioElement = document.getElementById('profile-bio');
+        const staffElement = document.getElementById('profile-position');
+        const isActive = document.getElementById('formUserLock');
+        const notification = document.getElementById('formEmailNotification');
+        const isAuthorize = document.getElementById('formTwoFactors');
+
+        if (userNameElement) userNameElement.textContent = data.username;
+        if (firstNameElement) firstNameElement.value = data.firstName;
+        if (lastNameElement) lastNameElement.value = data.lastName;
+        if (emailElement) emailElement.value = data.email;
+        if (phoneNumberElement) phoneNumberElement.value = data.phoneNumber;
+        if (bioElement) bioElement.value = data.bio;
+        if (staffElement) staffElement.innerHTML = data.staff;
+        if (isActive) {
+            isActive.checked = data.isActive === 'true'; // Set checkbox based on `isActive` value
+        }
+        if (notification) {
+            notification.checked = data.notification === 'true'; // Set checkbox based on `notification` value
+        }
+        if (isAuthorize) {
+            isAuthorize.checked = data.twoFactors === 'true';
+        }
+
+
+        await loadProfileActivity("activity-list", 3);
+    } catch (error) {
         console.error('Error loading profile data:', error);
-    });
+    }
 }
 
-function loadProfile() {
+async function loadProfile() {
     const panel = document.getElementById('panel');
     const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
 
@@ -171,30 +328,27 @@ function loadProfile() {
 
     if (!token) {
         console.error('No Bearer token found in localStorage');
-        // Optionally redirect to login
         return;
     }
 
-    fetch('/chat/profile', {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
-        }
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.text(); // Parse the response as text (HTML)
-        } else {
+    try {
+        const response = await fetch('/chat/profile', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
             throw new Error(`Failed to load profile.html: ${response.status}`);
         }
-    })
-    .then(html => {
+
+        const html = await response.text(); // Parse the response as text (HTML)
         panel.innerHTML = html; // Inject the HTML content into the #panel element
-        getImage();
-    })
-    .catch(error => {
+        await getImage(); // Load the profile image
+    } catch (error) {
         console.error('Error loading profile.html:', error);
-    });
+    }
 }
 
 async function loadBilling() {
@@ -276,44 +430,532 @@ async function loadBillingData() {
     }
 }
 
-
-function getImage() {
+async function getImage() {
     const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
-/*    const profilePicture = document.getElementById('profile-picture');
-
-    if (profilePicture) {
-        profilePicture.class = 'https://randomuser.me/api/portraits/men/40.jpg';
-    }*/
 
     if (!token) {
         console.error('No Bearer token found in localStorage');
         return;
     }
 
-    fetch('/chat/getImage', {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
-        }
-    })
-    .then(response => {
+    try {
+        const response = await fetch('/chat/getImage', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
         loadProfileData();
+
         if (!response.ok) {
             throw new Error(`Failed to fetch image: ${response.status}`);
         }
-        return response.blob(); // Parse the response as a blob
-    })
-    .then(blob => {
+
+        const blob = await response.blob(); // Parse the response as a blob
         const profilePicture = document.getElementById('profile-picture');
         if (profilePicture) {
-            profilePicture.src = URL.createObjectURL(blob);// Set the image source to the blob URL
+            profilePicture.src = URL.createObjectURL(blob); // Set the image source to the blob URL
         } else {
             console.error('Element with id "profile-picture" not found.');
         }
-    })
-    .catch(error => {
+    } catch (error) {
         console.error('Error fetching image:', error);
-    });
+    }
+}
+
+async function changePasswordData() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    const oldPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (newPassword !== confirmPassword) {
+        console.error('New password and confirmation do not match');
+        return;
+    }
+
+    const passwordData = {
+        password: oldPassword,
+        newPassword: newPassword,
+    };
+
+    try {
+        const response = await fetch('api/change-password', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(passwordData)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to update password: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Password updated successfully:', result);
+    } catch (error) {
+        console.error('Error updating password:', error);
+    }
+}
+
+async function lockUser() {
+    console.log('User is locked set');
+    const token = localStorage.getItem('authToken'); // Retrieve the auth token from localStorage
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/locked', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to lock user: ' + response.status);
+        }
+
+        const data = await response.json();
+        console.log('Response:', data);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function userUnlock() {
+    console.log('User is unlocked set');
+    const token = localStorage.getItem('authToken'); // Retrieve the auth token from localStorage
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/unlocked', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to unlock user: ' + response.status);
+        }
+
+        const data = await response.json();
+        console.log('Response:', data);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function sendBioInfo() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    const bioData = {
+        username: document.getElementById('profile-username').value,
+        staff: document.getElementById('profile-product-id').value,
+        bio: document.getElementById('profile-bio').value,
+    };
+
+    try {
+        const response = await fetch('/chat/profile', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(bioData)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to update profile: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Profile updated successfully:', result);
+        // get token and set it to local storage
+        localStorage.setItem('authToken', result.token); // Assuming the response contains a new token
+    } catch (error) {
+        console.error('Error updating profile:', error);
+    }
+}
+
+async function loadBio() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/bio', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch bio: ${response.status}`);
+        }
+
+        const bioData = await response.text(); // Parse the response as HTML content
+        const content = document.getElementById('profile-content'); // Target the container
+
+        if (content) {
+            content.innerHTML = bioData; // Render the bio content
+        } else {
+            console.error('Element with id "profile-content" not found.');
+        }
+    } catch (error) {
+        console.error('Error fetching bio data:', error);
+    }
+}
+
+async function updateProfile() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/api/profile', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to load profile data: ${response.status}`);
+        }
+
+        const data = await response.json(); // Parse the response as JSON
+        console.log('Profile data:', data);
+    } catch (error) {
+        console.error('Error loading profile data:', error);
+    }
+}
+
+async function sendProfile() {
+    let cardType = '';
+    const debtCard = document.getElementById('checkoutForm3');
+    const type2Card = document.getElementById('checkoutForm4');
+    const type3Card = document.getElementById('checkoutForm5');
+
+    if (debtCard && debtCard.checked) {
+        cardType = 'credit';
+    }
+    if (type2Card && type2Card.checked) {
+        cardType = 'debt';
+    }
+    if (type3Card && type3Card.checked) {
+        cardType = 'virtual';
+    }
+
+    console.log('Selected card type:', cardType);
+
+    const profileData = {
+        firstName: document.getElementById('form6Example1').value,
+        lastName: document.getElementById('form6Example2').value,
+        address: document.getElementById('form6Example4').value,
+        phoneNumber: document.getElementById('form6Example6').value,
+        cardType: cardType,
+        nameOfCard: document.getElementById('formNameOnCard').value,
+        cardNumber: document.getElementById('formCardNumber').value,
+        cardExpiryDate: document.getElementById('formExpiration').value,
+        cvv: document.getElementById('formCVV').value,
+    };
+
+    console.log('Profile data:', profileData);
+
+    const token = localStorage.getItem('authToken');
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/profile', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(profileData)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to save profile: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Profile saved successfully', data);
+        // Optionally, refresh the messages or update the UI
+    } catch (error) {
+        console.error('Error saving profile:', error);
+    }
+}
+
+async function addPhoto() {
+    const token = localStorage.getItem('authToken');
+    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+    modal.show();
+
+    const fileInput = document.getElementById('file-input');
+    fileInput.addEventListener('change', async function () {
+        const file = fileInput.files[0];
+
+        if (!token) {
+            console.error('No auth token found');
+            return;
+        }
+
+        if (!file) {
+            console.error('No file selected');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/chat/upload', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to upload file: ' + response.status);
+            }
+
+            console.log('File uploaded successfully');
+            // Optionally refresh the profile or update the UI
+            // loadProfile();
+        } catch (error) {
+            console.error('Error uploading file:', error);
+        }
+    }, { once: true }); // Ensure the event listener is added only once
+}
+
+
+async function sendChatMessage() {
+        const token = localStorage.getItem('authToken');
+        chatName = document.getElementById('chat-name').value
+        if (!chatName) {
+            const modal = new bootstrap.Modal(document.getElementById('messageModal'));
+            modal.show();
+            return;
+        }
+        if (!token) {
+           console.error('No auth token found');
+           return;
+        }
+
+        const messageChatData = {
+            user: document.getElementById('message-user').value,
+            message: document.getElementById('message-message').value,
+            chatName: document.getElementById('chat-name').value
+        };
+        console.log('Message     data:', messageChatData);
+
+        try {
+            response = await fetch('/chat/api/chatAdd', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                    },
+                body: JSON.stringify(messageChatData)
+            })
+            if (response.ok) {
+                console.log('Message saved successfully');
+                fetchChatMessages();
+            }
+        } catch (error) {
+            console.error('Failed to save message', error);
+        }
+}
+
+
+async function loadProfileActivity(idElement, numOfElements) {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/activity?numOfLogs=${encodeURIComponent(numOfElements)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch activity data');
+        }
+
+        const data = await response.json();
+        const activityList = document.getElementById(idElement);
+        activityList.innerHTML = ''; // Clear existing content
+
+        // Iterate over the response data and create activity items
+        for (const [activity, time] of Object.entries(data)) {
+            if (activity === 'message' || activity === 'success') continue; // Skip metadata
+
+            const activityItem = document.createElement('div');
+            activityItem.className = 'activity-item mb-3';
+
+            const activityTitle = document.createElement('h6');
+            activityTitle.className = 'mb-1';
+            activityTitle.textContent = activity;
+
+            const activityTime = document.createElement('p');
+            activityTime.className = 'text-muted small mb-0';
+            activityTime.textContent = time;
+
+            activityItem.appendChild(activityTitle);
+            activityItem.appendChild(activityTime);
+            activityList.appendChild(activityItem);
+        }
+    } catch (error) {
+        console.error('Error loading profile activity:', error);
+    }
+}
+
+async function sendChatName() {
+    const token = localStorage.getItem('authToken');
+    const chatName = document.getElementById('chat-name').value;
+
+    if (!chatName) {
+        console.error('Chat name is required');
+        return;
+    }
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/api/chatCreate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': 'Bearer ' + token
+            },
+            body: new URLSearchParams({
+                'name': chatName
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text(); // Read the response as text
+            console.error('Error creating chat:', errorText);
+            return;
+        }
+
+        const data = await response.json();
+        console.log('Chat created successfully:', data);
+        document.getElementById('chat-name-value').textContent = chatName;
+        fetchUsers();
+        fetchUser();
+        setInterval(fetchChatMessages, 5000);
+    } catch (error) {
+        console.error('Error creating chat:', error);
+    }
+}
+
+
+async function fetchCard() {
+    const token = localStorage.getItem('authToken'); // Retrieve the auth token from local storage
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/card', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const cardData = await response.text(); // Assuming the response is HTML content
+        document.getElementById('profile-content').innerHTML = cardData; // Render the card content
+        console.log('Card data fetched successfully');
+    } catch (error) {
+        console.error('Error fetching card data:', error);
+    }
+}
+
+async function getChat() {
+    const token = localStorage.getItem('authToken'); // Retrieve the auth token from local storage
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/chat', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const chatHtml = await response.text(); // Assuming the response is HTML content
+        const panel = document.getElementById('panel');
+        if (panel) {
+            panel.innerHTML = chatHtml; // Update the panel with the chat content
+            scrollToBottom();
+        } else {
+            console.error('Element with id "panel" not found.');
+        }
+    } catch (error) {
+        console.error('Error fetching chat data:', error);
+    }
 }
 
 function createNavbar() {
@@ -472,115 +1114,6 @@ function createNavbar() {
     document.body.appendChild(nav);
 }
 
-
-function test() {
-    console.log('Test function called');
-}
-
-async function changePasswordData() {
-    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
-
-    if (!token) {
-        console.error('No Bearer token found in localStorage');
-        return;
-    }
-
-    const oldPassword = document.getElementById('currentPassword').value;
-    const newPassword = document.getElementById('newPassword').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
-
-    if (newPassword !== confirmPassword) {
-        console.error('New password and confirmation do not match');
-        return;
-    }
-
-    const passwordData = {
-        password: oldPassword,
-        newPassword: newPassword,
-    };
-
-    try {
-        const response = await fetch('api/change-password', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(passwordData)
-        });
-
-        if (!response.ok) {
-            throw new Error(`Failed to update password: ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log('Password updated successfully:', result);
-    } catch (error) {
-        console.error('Error updating password:', error);
-    }
-}
-
-function lockUser() {
-        console.log('User is locked set');
-        const token = localStorage.getItem('authToken'); // Retrieve the auth token from localStorage
-
-        if (!token) {
-            console.error('No auth token found');
-            return;
-        }
-
-        fetch('/chat/locked', {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + token
-            }
-        })
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            } else {
-                throw new Error('Failed to lock user: ' + response.status);
-            }
-        })
-        .then(data => {
-            console.log('Response:', data);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
-
-}
-
-function userUnlock() {
-        console.log('User is unlocked set');
-        const token = localStorage.getItem('authToken'); // Retrieve the auth token from localStorage
-
-        if (!token) {
-            console.error('No auth token found');
-            return;
-        }
-
-        fetch('/chat/unlocked', {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + token
-            }
-        })
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            } else {
-                throw new Error('Failed to unlock user: ' + response.status);
-            }
-        })
-        .then(data => {
-            console.log('Response:', data);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
-}
-
 document.addEventListener('click', function (event) {
     console.log("Event target:", event.target);
 
@@ -593,14 +1126,14 @@ document.addEventListener('click', function (event) {
     const chatCreate = event.target.closest('#button-custom-chat-create');
     if (chatCreate) {
         event.preventDefault();
-        createChat();
-        fetchUsers();
-        fetchUser();
+        //createChat();
+        sendChatName();
     }
     const messageAdd = event.target.closest('#button_send_message');
     if (messageAdd) {
         event.preventDefault();
-        addMessageToChat();
+        //addMessageToChat();
+        sendChatMessage();
     }
 
     const profileLink = event.target.closest('#profile-link');
@@ -608,7 +1141,6 @@ document.addEventListener('click', function (event) {
         event.preventDefault();
         clearPanel();
         loadProfile();
-        //loadProfileData();
     }
 
     const homeButton = event.target.closest('#home-button');
@@ -622,7 +1154,6 @@ document.addEventListener('click', function (event) {
         event.preventDefault();
         clearPanel();
         loadProfile();
-        //loadProfileData();
     }
     const checkoutFormButton = event.target.closest('#checkoutFormButton');
     if (checkoutFormButton) {
@@ -640,14 +1171,12 @@ document.addEventListener('click', function (event) {
         addPhoto();
         clearPanel();
         loadProfile();
-        //loadProfileData();
     }
     const billingInfo = event.target.closest('#profile-billing');
     if (billingInfo) {
         event.preventDefault();
         clearProfileContent()
         loadBilling();
-        //loadBillingData();
     }
     const editBioElement = event.target.closest('#profile-edit-view');
     if (editBioElement) {
@@ -658,8 +1187,19 @@ document.addEventListener('click', function (event) {
     const changePassword = event.target.closest('#checkoutPasswordFormButton');
     if (changePassword) {
          event.preventDefault();
-         //test();
          changePasswordData();
+    }
+    const modalClosePictureElement = event.target.closest('#modalClosePicture');
+    if (modalClosePictureElement) {
+        event.preventDefault();
+        getImage();
+    }
+    const profileActivityElement = event.target.closest('#profile-activity');
+    if (profileActivityElement) {
+        event.preventDefault();
+        clearProfileContent();
+        setProfileElements();
+        loadProfileActivity("log-info", 5);
     }
 });
 
@@ -670,372 +1210,33 @@ document.addEventListener('change', function (event) {
     if (lockUserElement) {
         if (lockUserElement.checked) {
             console.log('User is unlocked');
-            //test();
             userUnlock();
         } else {
             console.log('User is locked');
-            //test();
             lockUser();
         }
     }
+    const formEmailNotificationElement = event.target.closest('#formEmailNotification');
+    if (formEmailNotificationElement) {
+        if (formEmailNotificationElement.checked) {
+            console.log('Email notifications are enabled');
+            updateNotification(true);
+        } else {
+            console.log('Email notifications are disabled');
+            updateNotification(false);
+        }
+    }
+    const formTwoFactorsElement = event.target.closest('#formTwoFactors');
+    if (formTwoFactorsElement) {
+        if (formTwoFactorsElement.checked) {
+            console.log('TwoFactors are enabled');
+            twoFactors(true);
+        } else {
+            console.log('TwoFactors are disabled');
+            twoFactors(false);
+        }
+    }
 });
-
-
-
-async function sendBioInfo() {
-    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
-
-    if (!token) {
-        console.error('No Bearer token found in localStorage');
-        return;
-    }
-
-    const bioData = {
-        username: document.getElementById('profile-username').value,
-        staff: document.getElementById('profile-product-id').value,
-        bio: document.getElementById('profile-bio').value,
-    };
-
-    try {
-        const response = await fetch('/chat/profile', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(bioData)
-        });
-
-        if (!response.ok) {
-            throw new Error(`Failed to update profile: ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log('Profile updated successfully:', result);
-        // get token and set it to local storage
-        localStorage.setItem('authToken', result.token); // Assuming the response contains a new token
-    } catch (error) {
-        console.error('Error updating profile:', error);
-    }
-}
-
-async function loadBio() {
-    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
-
-    if (!token) {
-        console.error('No Bearer token found in localStorage');
-        return;
-    }
-
-    try {
-        const response = await fetch('/chat/bio', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch bio: ${response.status}`);
-        }
-
-        const bioData = await response.text(); // Parse the response as HTML content
-        const content = document.getElementById('profile-content'); // Target the container
-
-        if (content) {
-            content.innerHTML = bioData; // Render the bio content
-        } else {
-            console.error('Element with id "profile-content" not found.');
-        }
-    } catch (error) {
-        console.error('Error fetching bio data:', error);
-    }
-}
-
-async function updateProfile() {
-    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
-
-    if (!token) {
-        console.error('No Bearer token found in localStorage');
-        return;
-    }
-
-    try {
-        const response = await fetch('/chat/api/profile', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`Failed to load profile data: ${response.status}`);
-        }
-
-        const data = await response.json(); // Parse the response as JSON
-        console.log('Profile data:', data);
-    } catch (error) {
-        console.error('Error loading profile data:', error);
-    }
-}
-
-function addPhoto() {
-    const token = localStorage.getItem('authToken');
-    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
-    modal.show();
-
-
-    const fileInput = document.getElementById('file-input');
-    fileInput.addEventListener('change', function () {
-        const file = fileInput.files[0];
-
-        if (token && file) {
-            const formData = new FormData();
-            formData.append('file', file);
-
-            fetch('/chat/upload', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + token
-                },
-                body: formData
-            })
-            .then(response => {
-                if (response.ok) {
-                    console.log('File uploaded successfully');
-                    //loadProfile(); // Optionally refresh the profile or update the UI
-                } else {
-                    throw new Error('Failed to upload file: ' + response.status);
-                }
-            })
-            .catch(error => {
-                console.error('Error uploading file', error);
-            });
-        } else {
-            console.error('No auth token found or no file selected');
-        }
-    }, { once: true }); // Ensure the event listener is added only once
-}
-
-
-function addMessageToChat() {
-        const token = localStorage.getItem('authToken');
-        chatName = document.getElementById('chat-name').value
-        if (!chatName) {
-            const modal = new bootstrap.Modal(document.getElementById('messageModal'));
-            modal.show();
-            return;
-        }
-
-        if (token) {
-            const messageChatData = {
-                    user: document.getElementById('message-user').value,
-                    message: document.getElementById('message-message').value,
-                    chatName: document.getElementById('chat-name').value
-            };
-
-            //console.log('Message data:', messageChatData);
-            fetch('/chat/api/chatAdd', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: JSON.stringify(messageChatData)
-            })
-            .then(response => {
-                if (response.ok) {
-                //console.log('Message saved successfully');
-            //return response.json();
-                } else {
-                    throw new Error('Failed to save message: ' + response.status);
-                }
-            })
-            .then(data => {
-            console.log('Message saved successfully', data);
-            // Optionally, refresh the messages or update the UI
-            //fetchMessages();
-            fetchChatMessages();
-            })
-            .catch(error => {
-                console.error('Error saving message', error);
-            });
-
-        } else {
-            console.error('No auth token found');
-        }
-}
-
-function createChat(){
-        const chatName = document.getElementById('chat-name').value;
-        const token = localStorage.getItem('authToken');
-
-        if (token) {
-            fetch('/chat/api/chatCreate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Authorization': 'Bearer ' + token
-                },
-                body: new URLSearchParams({
-                    'name': chatName
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Success:', data);
-                document.getElementById('chat-name-value').textContent = data.chatName;
-                setInterval(fetchChatMessages, 5000);
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
-        } else {
-            console.error('No auth token found');
-        }
-}
-
-function sendProfile() {
-
-    let cardType = '';
-    let debtCard = document.getElementById('checkoutForm3');
-    let type2Card = document.getElementById('checkoutForm4');
-    let type3Card = document.getElementById('checkoutForm5');
-
-    if (debtCard && debtCard.checked) {
-        cardType = 'credit';
-    }
-    if (type2Card && type2Card.checked) {
-        cardType = 'debt';
-    }
-    if (type3Card && type3Card.checked) {
-        cardType = 'virtual';
-    }
-
-    console.log('Selected card type:', cardType);
-
-    const profileData = {
-        firstName: document.getElementById('form6Example1').value,
-        lastName: document.getElementById('form6Example2').value,
-        address: document.getElementById('form6Example4').value,
-        phoneNumber: document.getElementById('form6Example6').value,
-        cardType: cardType,
-        nameOfCard: document.getElementById('formNameOnCard').value,
-        cardNumber: document.getElementById('formCardNumber').value,
-        cardExpiryDate: document.getElementById('formExpiration').value,
-        cvv: document.getElementById('formCVV').value,
-    }
-
-    console.log('Profile data:', profileData);
-
-    const token = localStorage.getItem('authToken');
-
-    fetch('/chat/profile', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-        },
-            body: JSON.stringify(profileData)
-        })
-        .then(response => {
-        if (response.ok) {
-                    //console.log('Message saved successfully');
-                //return response.json();
-        } else {
-            throw new Error('Failed to save profile: ' + response.status);
-        }
-        })
-        .then(data => {
-        console.log('Profile saved successfully', data);
-                // Optionally, refresh the messages or update the UI
-
-        })
-        .catch(error => {
-            console.error('Error saving profile', error);
-        });
-}
-
-
-function clearPanel() {
-    const panel = document.getElementById('panel');
-    if (panel) {
-        panel.innerHTML = ''; // Clear all existing content in the panel
-    } else {
-        console.error('Element with id "panel" not found.');
-    }
-}
-
-function clearProfileContent() {
-    const content = document.getElementById('profile-content');
-    if (content) {
-        content.innerHTML = ''; // Clear all existing content in the profile section
-    } else {
-        console.error('Element with id "profile-content" not found.');
-    }
-}
-
-
-async function fetchCard() {
-    const token = localStorage.getItem('authToken'); // Retrieve the auth token from local storage
-
-    if (!token) {
-        console.error('No auth token found');
-        return;
-    }
-
-    try {
-        const response = await fetch('/chat/card', {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + token
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const cardData = await response.text(); // Assuming the response is HTML content
-        document.getElementById('profile-content').innerHTML = cardData; // Render the card content
-        console.log('Card data fetched successfully');
-    } catch (error) {
-        console.error('Error fetching card data:', error);
-    }
-}
-
-async function getChat() {
-    const token = localStorage.getItem('authToken'); // Retrieve the auth token from local storage
-
-    if (!token) {
-        console.error('No auth token found');
-        return;
-    }
-
-    try {
-        const response = await fetch('/chat/chat', {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + token
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const chatHtml = await response.text(); // Assuming the response is HTML content
-        const panel = document.getElementById('panel');
-        if (panel) {
-            panel.innerHTML = chatHtml; // Update the panel with the chat content
-            scrollToBottom();
-        } else {
-            console.error('Element with id "panel" not found.');
-        }
-    } catch (error) {
-        console.error('Error fetching chat data:', error);
-    }
-}
 
 window.onload = function() {
     getChat();

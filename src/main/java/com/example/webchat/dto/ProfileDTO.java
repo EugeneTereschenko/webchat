@@ -29,6 +29,10 @@ public class ProfileDTO {
 
     private String isActive;
 
+    private String notification;
+
+    private String twoFactors;
+
     private String cardType;
 
     private String nameOfCard;

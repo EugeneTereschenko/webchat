@@ -1,5 +1,6 @@
 package com.example.webchat.service;
 
+import com.example.webchat.exception.UserBlockedException;
 import com.example.webchat.model.User;
 import com.example.webchat.repository.UserRepository;
 import lombok.AllArgsConstructor;
@@ -23,14 +24,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        log.info("Searching user by username: " + username);
+        log.debug("Searching user by username: " + username);
         Cache cache = cacheManager.getCache("loginAttempts");
-/*        if (cache.get(username + "_blocked") != null) {
+        if (cache.get(username + "_blocked") != null) {
             throw new UserBlockedException("User blocked");
-        }*/
+        }
 
         User user = userRepository.findByUsername(username);
-        log.info("User found: " + user.getUsername());
+        log.debug("User found: " + user.getUsername());
         if (user == null) {
             throw new UsernameNotFoundException("User not found");
         }

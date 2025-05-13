@@ -35,8 +35,12 @@ public class SecurityConfig {
                 .cors(withDefaults())
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
-                                .requestMatchers( "/logout/**", "/login/**", "/singup/**", "/css/**", "/js/**", "/api/singup/**", "/api/login/**", "/h2-console/**").permitAll()
+                                .requestMatchers( "/logout/**", "/login/**", "/singup/**", "/css/**", "/js/**", "/api/singup/**", "/api/login/**").permitAll()
+                                .requestMatchers( "/h2-console/**", "/twofactor/**", "/api/check-auth/**", "/api/verify/**").permitAll()
                                 .anyRequest().authenticated()
+                )
+                .formLogin(formLogin ->
+                        formLogin.loginPage("/login").permitAll()
                 )
                 .sessionManagement(sessionManagement ->
                         sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)

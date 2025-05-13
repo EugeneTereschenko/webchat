@@ -3,10 +3,6 @@ package com.example.webchat.controller;
 import com.example.webchat.dto.UserDTO;
 import com.example.webchat.dto.UserResponseDTO;
 import com.example.webchat.model.User;
-import com.example.webchat.security.JwtUtil;
-import com.example.webchat.service.EmailNotificationService;
-import com.example.webchat.service.QRCodeGenerator;
-import com.example.webchat.service.TwoFactorAuthService;
 import com.example.webchat.service.UserService;
 import com.example.webchat.service.impl.ActivityService;
 import lombok.AllArgsConstructor;
@@ -39,13 +35,10 @@ public class UserController {
             userResponseDTO.setMessage("User with this email already exists");
             return ResponseEntity.badRequest().body(userResponseDTO);
         }
-
-        User user = userService.registerUser(userDTO);
-        userService.createRoleIfExists("ROLE_USER");
-        userService.addRoleToUser(user.getUsername(), "ROLE_USER");
-        log.info("Registering user: " + user.toString());
-        userResponseDTO.setMessage("User " + user.getUsername() + " registered successfully");
-        activityService.addActivity("User registered", user.getUserID(), new Date());
+        userResponseDTO = userService.registerAndAddRole(userDTO);
+        if(userResponseDTO.getSuccess() == null || userResponseDTO.getSuccess().equals("false")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(userResponseDTO);
+        }
         return ResponseEntity.ok(userResponseDTO);
     }
 
@@ -59,8 +52,10 @@ public class UserController {
             userResponseDTO.setSuccess("false");
             return ResponseEntity.badRequest().body(userResponseDTO);
         }
-
-        userResponseDTO = createResponse(userDTO, user);
+        userResponseDTO = userService.loginUser(userDTO, user);
+        if(userResponseDTO.getSuccess() == null || userResponseDTO.getSuccess().equals("false")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(userResponseDTO);
+        }
         return ResponseEntity.ok(userResponseDTO);
     }
 
@@ -80,27 +75,19 @@ public class UserController {
     }
 
     @PostMapping("api/check-auth")
-    public ResponseEntity<HashMap<String, String>> checkAuth(@Valid @RequestBody UserDTO userDTO) {
-        HashMap<String, String> response = new HashMap<>();
+    public ResponseEntity<UserResponseDTO> checkAuth(@Valid @RequestBody UserDTO userDTO) {
+        UserResponseDTO userResponseDTO = new UserResponseDTO();
         User user = userService.getUserByEmail(userDTO.getEmail());
         log.info("Check auth request: " + userDTO.toString());
         if (user == null) {
-            response.put("message", "User not found");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            userResponseDTO.setMessage("User not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(userResponseDTO);
         }
-
-        if (user.isTwoFactorEnabled()) {
-            log.info("User has two-factor authentication enabled");
-            response.put("twofactor", "true");
-            userService.prepareAndSendTwoFactorEmailMessage(user);
-            response.put("success", "true");
-            response.put("message", "Two-factor code sent to your email");
-            return ResponseEntity.ok(response);
+        userResponseDTO = userService.checkAuth(user);
+        if (userResponseDTO.getSuccess() == null || userResponseDTO.getSuccess().equals("false")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(userResponseDTO);
         }
-        response.put("success", "false");
-        response.put("twofactor", "false");
-        response.put("message", "User is authenticated by default");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(userResponseDTO);
     }
 
     @PutMapping("api/change-password")
@@ -125,23 +112,23 @@ public class UserController {
     }
 
     @PostMapping("api/refresh-token")
-    public ResponseEntity<HashMap<String, String>> refreshToken(@RequestBody HashMap<String, String> request) {
+    public ResponseEntity<UserResponseDTO> refreshToken(@RequestBody HashMap<String, String> request) {
         String currentToken = request.get("token");
-        HashMap<String, String> response = new HashMap<>();
+        UserResponseDTO userResponseDTO = new UserResponseDTO();
 
         if (currentToken == null || currentToken.isEmpty()) {
-            response.put("message", "Token is missing");
-            return ResponseEntity.badRequest().body(response);
+            userResponseDTO.setMessage("Token is missing");
+            return ResponseEntity.badRequest().body(userResponseDTO);
         }
 
         try {
             String newToken = userService.refreshToken(currentToken);
-            response.put("token", newToken);
-            response.put("message", "Token refreshed successfully");
-            return ResponseEntity.ok(response);
+            userResponseDTO.setToken(newToken);
+            userResponseDTO.setMessage("Token refreshed successfully");
+            return ResponseEntity.ok(userResponseDTO);
         } catch (Exception e) {
-            response.put("message", "Failed to refresh token: " + e.getMessage());
-            return ResponseEntity.status(401).body(response);
+            userResponseDTO.setMessage("Failed to refresh token: " + e.getMessage());
+            return ResponseEntity.status(401).body(userResponseDTO);
         }
     }
 

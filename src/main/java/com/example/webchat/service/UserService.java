@@ -13,8 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
 import org.passay.PasswordGenerator;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,9 +24,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @AllArgsConstructor
@@ -81,7 +77,7 @@ public class UserService {
         return authentication.isAuthenticated();
     }
 
-    public User registerUser(UserDTO registrationDTO) {
+    public User registerUser(UserDTO registrationDTO, Role role) {
         User userAdd = userRepository.findByUsername(Optional.of(registrationDTO.getUsername()).orElse("_"));
         if (userAdd != null) {
             throw new UserBlockedException("User already exists");
@@ -97,6 +93,7 @@ public class UserService {
         userNew.setPassword(passwordEncoder.encode(passwordSalt));
         userNew.setTwoFactorEnabled(false);
         userNew.setSalt(passwordSalt);
+        userNew.setRoles(new ArrayList<>(Collections.singletonList(role)));
 
         log.debug("create user" + userNew.getUsername());
         return userRepository.save(userNew);
@@ -303,8 +300,58 @@ public class UserService {
             }
         } catch (Exception e) {
             responseDTO.setSuccess("false");
-            responseDTO.setMessage("Error verifying OTP: " + e.getMessage());
+            responseDTO.setMessage("An error occurred while verifying OTP");
+            log.error("Error verifying OTP", e);
         }
         return responseDTO;
+    }
+
+    public UserResponseDTO registerAndAddRole(UserDTO userDTO) {
+        try {
+            User user = registerUser(userDTO, createRoleIfExists("ROLE_USER"));
+            activityService.addActivity("User registered", user.getUserID(), new Date());
+            return new UserResponseDTO("User registered successfully", "true");
+        } catch (Exception e) {
+            log.info("Failed to register user: " + e.getMessage());
+            return new UserResponseDTO("false", null);
+        }
+    }
+
+    public UserResponseDTO loginUser(UserDTO userDTO, User user) {
+        UserResponseDTO userResponseDTO = new UserResponseDTO();
+        log.info(userDTO.toString() + " login");
+        try {
+            String token = authenticateUser(user.getUsername(), userDTO.getPassword());
+            userResponseDTO.setToken(token);
+            userResponseDTO.setMessage("User logged in successfully");
+            userResponseDTO.setSuccess("true");
+            userResponseDTO.setUserID(String.valueOf(user.getUserID()));
+            activityService.addActivity("User login", user.getUserID(), new Date());
+        } catch (Exception e) {
+            userResponseDTO.setSuccess("false");
+            log.info("Failed to login: " + e.getMessage());
+        }
+        return userResponseDTO;
+    }
+
+    public UserResponseDTO checkAuth(User user) {
+        UserResponseDTO userResponseDTO = new UserResponseDTO();
+        try {
+            if (user.isTwoFactorEnabled()) {
+                log.info("User has two-factor authentication enabled");
+                userResponseDTO.setTwofactor("true");
+                prepareAndSendTwoFactorEmailMessage(user);
+                userResponseDTO.setSuccess("true");
+                userResponseDTO.setMessage("Two-factor code sent to your email");
+            } else {
+                userResponseDTO.setSuccess("true");
+                userResponseDTO.setTwofactor("false");
+                userResponseDTO.setMessage("User is authenticated by default");
+            }
+        } catch (Exception e) {
+            userResponseDTO.setSuccess("false");
+            log.info("Failed to check authentication: " + e.getMessage());
+        }
+        return userResponseDTO;
     }
 }

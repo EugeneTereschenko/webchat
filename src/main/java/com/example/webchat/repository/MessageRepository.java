@@ -11,4 +11,5 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     // Custom query methods can be defined here if needed
     // For example, to find messages by chat ID or other criteria
     List<Message> findByChatId(Long chatId);
+    List<Message> findByMessageContainingIgnoreCase(String keyword);
 }

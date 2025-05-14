@@ -140,7 +140,7 @@ async function updateNotification(notification) {
 
 async function fetchChatMessages() {
     const token = localStorage.getItem('authToken'); // Retrieve the auth token
-    const chatName = document.getElementById('chat-name').value;
+    const chatName = document.getElementById('chat-name')?.value;
 
     if (!token) {
         console.error('No auth token found');
@@ -188,7 +188,7 @@ async function fetchChatMessages() {
 
 async function fetchUser() {
     const token = localStorage.getItem('authToken');
-    const chatName = document.getElementById('chat-name').value;
+    const chatName = document.getElementById('chat-name')?.value;
 
     if (!token) {
         console.error('No auth token found');
@@ -221,7 +221,7 @@ async function fetchUser() {
 
 async function fetchUsers() {
     const token = localStorage.getItem('authToken');
-    const chatName = document.getElementById('chat-name').value;
+    const chatName = document.getElementById('chat-name')?.value;
 
     if (!token) {
         console.error('No auth token found');
@@ -768,7 +768,7 @@ async function addPhoto() {
 
 async function sendChatMessage() {
         const token = localStorage.getItem('authToken');
-        chatName = document.getElementById('chat-name').value
+        const chatName = document.getElementById('chat-name')?.value;
         if (!chatName) {
             const modal = new bootstrap.Modal(document.getElementById('messageModal'));
             modal.show();
@@ -782,7 +782,7 @@ async function sendChatMessage() {
         const messageChatData = {
             user: document.getElementById('message-user').value,
             message: document.getElementById('message-message').value,
-            chatName: document.getElementById('chat-name').value
+            chatName: document.getElementById('chat-name')?.value
         };
         console.log('Message     data:', messageChatData);
 
@@ -855,7 +855,7 @@ async function loadProfileActivity(idElement, numOfElements) {
 
 async function sendChatName() {
     const token = localStorage.getItem('authToken');
-    const chatName = document.getElementById('chat-name').value;
+    const chatName = document.getElementById('chat-name')?.value;
 
     if (!chatName) {
         console.error('Chat name is required');
@@ -955,6 +955,35 @@ async function getChat() {
         }
     } catch (error) {
         console.error('Error fetching chat data:', error);
+    }
+}
+
+async function searchMessageForChat(keyword) {
+    console.log('Searching for keyword:', keyword); // Log the keyword
+    const token = localStorage.getItem('authToken');
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/search/messages?keyword=${encodeURIComponent(keyword)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to search messages: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Search results:', data);
+        return data;
+    } catch (error) {
+        console.error('Error searching messages:', error);
     }
 }
 
@@ -1093,11 +1122,13 @@ function createNavbar() {
     input.type = 'search';
     input.placeholder = 'Search';
     input.setAttribute('aria-label', 'Search');
+    input.id = 'chat-message';
 
     const button = document.createElement('button');
     button.className = 'btn btn-outline-success';
     button.type = 'submit';
     button.textContent = 'Search';
+    button.id = 'button-custom-chat-create';
 
     form.appendChild(input);
     form.appendChild(button);
@@ -1200,6 +1231,15 @@ document.addEventListener('click', function (event) {
         clearProfileContent();
         setProfileElements();
         loadProfileActivity("log-info", 5);
+    }
+    const searchUserElement = event.target.closest('#button-custom-chat-create');
+    if (searchUserElement) {
+        event.preventDefault();
+        const searchMessage = document.getElementById('chat-message')?.value;
+        console.log('Search user:', searchMessage);
+        if (searchMessage) {
+            searchMessageForChat(searchMessage); // Pass the keyword, not a function
+        }
     }
 });
 

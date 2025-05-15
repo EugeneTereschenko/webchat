@@ -1,7 +1,7 @@
 package com.example.webchat.controller;
 
 import com.example.webchat.model.Chat;
-import com.example.webchat.model.Message;
+import com.example.webchat.dto.MessageChatDTO;
 import com.example.webchat.service.SearchService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,13 +18,13 @@ public class SearchController {
 
     private final SearchService searchService;
 
-    @GetMapping("/search/chats")
+    @GetMapping("/api/search/chats")
     public List<Chat> searchChats(@RequestParam String keyword) {
         return searchService.searchChats(keyword);
     }
 
-    @GetMapping("/search/messages")
-    public List<Message> searchMessages(@RequestParam String keyword) {
+    @GetMapping("/api/search/messages")
+    public List<MessageChatDTO> searchMessages(@RequestParam String keyword) {
         log.info(" Searching messages with keyword: {}", keyword);
         return searchService.searchMessages(keyword);
     }

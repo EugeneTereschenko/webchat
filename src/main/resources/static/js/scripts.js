@@ -30,6 +30,15 @@ function clearPanel() {
     }
 }
 
+function clearModal() {
+    const panel = document.getElementById('modal-container');
+    if (panel) {
+        panel.innerHTML = ''; // Clear all existing content in the panel
+    } else {
+        console.error('Element with id "modal-container" not found.');
+    }
+}
+
 function clearProfileContent() {
     const content = document.getElementById('profile-content');
     if (content) {
@@ -140,11 +149,16 @@ async function updateNotification(notification) {
 
 async function fetchChatMessages() {
     const token = localStorage.getItem('authToken'); // Retrieve the auth token
-    const chatName = document.getElementById('chat-name')?.value;
+    var chatName = document.getElementById('chat-name')?.value;
+    const chatNameFromChat= document.getElementById('chat-name-value')?.textContent;
 
     if (!token) {
         console.error('No auth token found');
         return;
+    }
+
+    if (chatNameFromChat) {
+        chatName = chatNameFromChat; // Use the chat name from the chat element
     }
 
     if (!chatName) {
@@ -314,6 +328,74 @@ async function loadProfileData() {
         await loadProfileActivity("activity-list", 3);
     } catch (error) {
         console.error('Error loading profile data:', error);
+    }
+}
+
+async function loadSearchUser() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/search/user', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to load search user: ${response.status}`);
+        }
+
+        const html = await response.text(); // Parse the response as text (HTML)
+        const modalContainer = document.getElementById('modal-container'); // Ensure a modal container exists
+        if (modalContainer) {
+            modalContainer.innerHTML = html; // Inject the HTML content into the modal container
+            const modal = new bootstrap.Modal(modalContainer.querySelector('.modal')); // Initialize the modal
+            modal.show(); // Show the modal
+        } else {
+            console.error('Modal container not found.');
+        }
+    } catch (error) {
+        console.error('Error loading search user:', error);
+    }
+}
+
+async function loadSearchChat() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/search/chat', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to load search chat: ${response.status}`);
+        }
+
+        const html = await response.text(); // Parse the response as text (HTML)
+        const modalContainer = document.getElementById('modal-container'); // Ensure a modal container exists
+        if (modalContainer) {
+            modalContainer.innerHTML = html; // Inject the HTML content into the modal container
+            const modal = new bootstrap.Modal(modalContainer.querySelector('.modal')); // Initialize the modal
+            modal.show(); // Show the modal
+        } else {
+            console.error('Modal container not found.');
+        }
+    } catch (error) {
+        console.error('Error loading search chat:', error);
     }
 }
 
@@ -853,9 +935,13 @@ async function loadProfileActivity(idElement, numOfElements) {
     }
 }
 
-async function sendChatName() {
+async function sendChatName(chatNameToOpen) {
     const token = localStorage.getItem('authToken');
-    const chatName = document.getElementById('chat-name')?.value;
+    let chatName = document.getElementById('chat-name')?.value; // Changed to let
+
+    if (chatNameToOpen) {
+        chatName = chatNameToOpen; // Now reassignment works
+    }
 
     if (!chatName) {
         console.error('Chat name is required');
@@ -880,7 +966,7 @@ async function sendChatName() {
         });
 
         if (!response.ok) {
-            const errorText = await response.text(); // Read the response as text
+            const errorText = await response.text();
             console.error('Error creating chat:', errorText);
             return;
         }
@@ -968,7 +1054,7 @@ async function searchMessageForChat(keyword) {
     }
 
     try {
-        const response = await fetch(`/chat/search/messages?keyword=${encodeURIComponent(keyword)}`, {
+        const response = await fetch(`/chat/api/search/messages?keyword=${encodeURIComponent(keyword)}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -981,10 +1067,62 @@ async function searchMessageForChat(keyword) {
 
         const data = await response.json();
         console.log('Search results:', data);
-        return data;
+
+        // Get the panel element
+        const panel = document.getElementById('panel');
+        if (!panel) {
+            console.error('Panel element not found');
+            return;
+        }
+
+        // Clear previous content
+        panel.innerHTML = '';
+
+        // Create a container div
+        const containerDiv = document.createElement('div');
+        containerDiv.className = 'd-flex justify-content-center align-items-center';
+        containerDiv.style.height = '100%'; // Optional: Adjust height if needed
+        containerDiv.style.marginTop = '30px'; // Add margin-top of 30px
+
+        // Append the container div to the panel
+        panel.appendChild(containerDiv);
+
+
+        // Create a list group
+        const listGroup = document.createElement('ul');
+        listGroup.className = 'list-group';
+
+        // Populate the list with search results
+        data.forEach(result => {
+            const listItem = document.createElement('li');
+            listItem.className = 'list-group-item';
+            listItem.textContent = `Chat: ${result.chatName}, Message: ${result.message}, User: ${result.user}`;
+
+                // Add a click event listener
+            listItem.addEventListener('click', () => {
+                console.log(`Clicked on: Chat: ${result.chatName}, Message: ${result.message}, User: ${result.user}`);
+                    // Call your function here
+                openChatById(result);
+            });
+
+            listGroup.appendChild(listItem);
+        });
+
+        // Append the list to the panel
+        containerDiv.appendChild(listGroup);
+        //panel.appendChild(listGroup);
+
     } catch (error) {
         console.error('Error searching messages:', error);
     }
+}
+
+function openChatById(result){
+    console.log('Opening chat by ID:', result.id);
+    console.log('Opening chat by name:', result.chatName);
+    clearPanel();
+    getChat();
+    sendChatName(result.chatName);
 }
 
 function createNavbar() {
@@ -1069,9 +1207,9 @@ function createNavbar() {
 
     const dropdownItems = [
         { text: 'Profile', href: '#', id: 'profile-link', className: 'dropdown-item' },
-        { text: 'Search User', href: '#', className: 'dropdown-item' },
+        { text: 'Search User', href: '#', id: 'search-user-link', className: 'dropdown-item' },
         { isDivider: true },
-        { text: 'Search Chat', href: '#', className: 'dropdown-item' },
+        { text: 'Search Chat', href: '#', id: 'search-chat-link', className: 'dropdown-item' },
     ];
 
     dropdownItems.forEach(item => {
@@ -1128,7 +1266,7 @@ function createNavbar() {
     button.className = 'btn btn-outline-success';
     button.type = 'submit';
     button.textContent = 'Search';
-    button.id = 'button-custom-chat-create';
+    button.id = 'button-search-chat';
 
     form.appendChild(input);
     form.appendChild(button);
@@ -1154,7 +1292,7 @@ document.addEventListener('click', function (event) {
         clearProfileContent();
         fetchCard();
     }
-    const chatCreate = event.target.closest('#button-custom-chat-create');
+    const chatCreate = event.target.closest('#button-add-chat');
     if (chatCreate) {
         event.preventDefault();
         //createChat();
@@ -1172,6 +1310,19 @@ document.addEventListener('click', function (event) {
         event.preventDefault();
         clearPanel();
         loadProfile();
+    }
+    const searchUserLink = event.target.closest('#search-user-link');
+    if (searchUserLink) {
+        event.preventDefault();
+        //clearPanel();
+        loadSearchUser();
+    }
+    const searchChatLink = event.target.closest('#search-chat-link');
+    if (searchChatLink) {
+        event.preventDefault();
+        //clearPanel();
+        loadSearchChat();
+        //getChat();
     }
 
     const homeButton = event.target.closest('#home-button');
@@ -1232,7 +1383,7 @@ document.addEventListener('click', function (event) {
         setProfileElements();
         loadProfileActivity("log-info", 5);
     }
-    const searchUserElement = event.target.closest('#button-custom-chat-create');
+    const searchUserElement = event.target.closest('#button-search-chat');
     if (searchUserElement) {
         event.preventDefault();
         const searchMessage = document.getElementById('chat-message')?.value;

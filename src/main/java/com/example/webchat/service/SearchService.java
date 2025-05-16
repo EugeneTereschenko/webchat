@@ -20,6 +20,28 @@ public class SearchService {
     private final ChatRepository chatRepository;
     private final MessageRepository messageRepository;
 
+    public List<MessageChatDTO> searchUsers(String keyword) {
+        List<Message> messages = messageRepository.findByUserContainingIgnoreCase(keyword);
+        log.info(" Found {} messages with keyword: {}", messages.size(), keyword);
+
+        if (messages.isEmpty()) {
+            // If no messages found, you can return an empty list or handle it as needed
+            return List.of();
+        }
+
+
+        // Convert Message to MessageChatDTO
+        List<MessageChatDTO> messageChatDTOs = messages.stream()
+                .map(message -> new MessageChatDTO(
+                        message.getId(),
+                        message.getUser(),
+                        "",
+                        message.getChat().getChatName()
+                ))
+                .toList();
+        return messageChatDTOs;
+    }
+
     public List<ChatDTO> searchChats(String keyword) {
 
         List<Chat> chats = chatRepository.findByChatNameContainingIgnoreCase(keyword);

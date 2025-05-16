@@ -30,4 +30,10 @@ public class SearchController {
         log.debug(" Searching messages with keyword: {}", keyword);
         return ResponseEntity.ok().body(searchService.searchMessages(keyword));
     }
+
+    @GetMapping("/api/search/users")
+    public ResponseEntity<List<MessageChatDTO>> searchUsers(@RequestParam String keyword) {
+        log.debug(" Searching chat with keyword: {}", keyword);
+        return ResponseEntity.ok().body(searchService.searchUsers(keyword));
+    }
 }

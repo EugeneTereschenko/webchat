@@ -1044,6 +1044,77 @@ async function getChat() {
     }
 }
 
+async function searchUser(keyword) {
+    console.log('Searching for keyword:', keyword); // Log the keyword
+    const token = localStorage.getItem('authToken');
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/api/search/users?keyword=${encodeURIComponent(keyword)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to search user: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Search results:', data);
+
+        // Get the panel element
+        const panel = document.getElementById('search-user-results');
+        if (!panel) {
+            console.error('Panel element not found');
+            return;
+        }
+
+        // Clear previous content
+        panel.innerHTML = '';
+
+        // Create a container div
+        const containerDiv = document.createElement('div');
+        containerDiv.className = 'd-flex justify-content-center align-items-center';
+        containerDiv.style.height = '100%'; // Optional: Adjust height if needed
+        containerDiv.style.marginTop = '30px'; // Add margin-top of 30px
+
+        // Append the container div to the panel
+        panel.appendChild(containerDiv);
+
+
+        // Create a list group
+        const listGroup = document.createElement('ul');
+        listGroup.className = 'list-group';
+
+        data.forEach(result => {
+            const listItem = document.createElement('li');
+            listItem.className = 'list-group-item';
+            listItem.textContent = `Chat: ${result.user}`; // Fixed string
+
+            // Add a click event listener
+            listItem.addEventListener('click', () => {
+                console.log(`Clicked on: Chat: ${result.user}`);
+                openChatById(result);
+            });
+
+            listGroup.appendChild(listItem);
+        });
+
+        // Append the list to the panel
+        containerDiv.appendChild(listGroup);
+        //panel.appendChild(listGroup);
+
+    } catch (error) {
+        console.error('Error searching chat:', error);
+    }
+}
+
 
 async function searchChat(keyword) {
     console.log('Searching for keyword:', keyword); // Log the keyword
@@ -1467,6 +1538,15 @@ document.addEventListener('click', function (event) {
         console.log('Search chat:', searchChatWord);
         if (searchChat) {
             searchChat(searchChatWord);
+        }
+    }
+    const searchUserElement = event.target.closest('#search-user-button');
+    if (searchUserElement) {
+        event.preventDefault();
+        const searchUserWord = document.getElementById('search-user-input')?.value;
+        console.log('Search user:', searchUserWord);
+        if (searchUserWord) {
+            searchUser(searchUserWord);
         }
     }
 });

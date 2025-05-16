@@ -12,4 +12,5 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     // For example, to find messages by chat ID or other criteria
     List<Message> findByChatId(Long chatId);
     List<Message> findByMessageContainingIgnoreCase(String keyword);
+    List<Message> findByUserContainingIgnoreCase(String keyword);
 }

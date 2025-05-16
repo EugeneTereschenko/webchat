@@ -51,14 +51,14 @@ function clearProfileContent() {
 function setProfileElements() {
     const profileContent = document.getElementById('profile-content');
     profileContent.innerHTML = "<section style=\"background-color: #eee;\">" +
-                                    "<div class=\"container py-5\">" +
-                                        "<div class=\"row d-flex justify-content-center\">" +
-                                            "<div class=\"col-md-12 col-lg-10 col-xl-8\">" +
-                                                "<div id=\"log-info\"></div>" +
-                                            "</div>" +
-                                        "</div>" +
-                                    "</div>" +
-                                "</section>";
+        "<div class=\"container py-5\">" +
+        "<div class=\"row d-flex justify-content-center\">" +
+        "<div class=\"col-md-12 col-lg-10 col-xl-8\">" +
+        "<div id=\"log-info\"></div>" +
+        "</div>" +
+        "</div>" +
+        "</div>" +
+        "</section>";
 }
 
 async function checkAuth() {
@@ -70,7 +70,7 @@ async function checkAuth() {
     }
 
     try {
-        const response = await fetch('/api/check-auth', {
+        const response = await fetch('/chat/api/check-auth', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -150,7 +150,7 @@ async function updateNotification(notification) {
 async function fetchChatMessages() {
     const token = localStorage.getItem('authToken'); // Retrieve the auth token
     var chatName = document.getElementById('chat-name')?.value;
-    const chatNameFromChat= document.getElementById('chat-name-value')?.textContent;
+    const chatNameFromChat = document.getElementById('chat-name-value')?.textContent;
 
     if (!token) {
         console.error('No auth token found');
@@ -470,7 +470,7 @@ async function loadBillingData() {
     }
 
     try {
-        const response = await fetch('api/allProfiles', {
+        const response = await fetch('/chat/api/allProfiles', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
@@ -569,7 +569,7 @@ async function changePasswordData() {
     };
 
     try {
-        const response = await fetch('api/change-password', {
+        const response = await fetch('/chat/api/change-password', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -849,41 +849,41 @@ async function addPhoto() {
 
 
 async function sendChatMessage() {
-        const token = localStorage.getItem('authToken');
-        const chatName = document.getElementById('chat-name')?.value;
-        if (!chatName) {
-            const modal = new bootstrap.Modal(document.getElementById('messageModal'));
-            modal.show();
-            return;
-        }
-        if (!token) {
-           console.error('No auth token found');
-           return;
-        }
+    const token = localStorage.getItem('authToken');
+    const chatName = document.getElementById('chat-name')?.value;
+    if (!chatName) {
+        const modal = new bootstrap.Modal(document.getElementById('messageModal'));
+        modal.show();
+        return;
+    }
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
 
-        const messageChatData = {
-            user: document.getElementById('message-user').value,
-            message: document.getElementById('message-message').value,
-            chatName: document.getElementById('chat-name')?.value
-        };
-        console.log('Message     data:', messageChatData);
+    const messageChatData = {
+        user: document.getElementById('message-user').value,
+        message: document.getElementById('message-message').value,
+        chatName: document.getElementById('chat-name')?.value
+    };
+    console.log('Message     data:', messageChatData);
 
-        try {
-            response = await fetch('/chat/api/chatAdd', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                    },
-                body: JSON.stringify(messageChatData)
-            })
-            if (response.ok) {
-                console.log('Message saved successfully');
-                fetchChatMessages();
-            }
-        } catch (error) {
-            console.error('Failed to save message', error);
+    try {
+        response = await fetch('/chat/api/chatAdd', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(messageChatData)
+        })
+        if (response.ok) {
+            console.log('Message saved successfully');
+            fetchChatMessages();
         }
+    } catch (error) {
+        console.error('Failed to save message', error);
+    }
 }
 
 
@@ -1044,6 +1044,78 @@ async function getChat() {
     }
 }
 
+
+async function searchChat(keyword) {
+    console.log('Searching for keyword:', keyword); // Log the keyword
+    const token = localStorage.getItem('authToken');
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/api/search/chats?keyword=${encodeURIComponent(keyword)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to search chat: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Search results:', data);
+
+        // Get the panel element
+        const panel = document.getElementById('search-chat-results');
+        if (!panel) {
+            console.error('Panel element not found');
+            return;
+        }
+
+        // Clear previous content
+        panel.innerHTML = '';
+
+        // Create a container div
+        const containerDiv = document.createElement('div');
+        containerDiv.className = 'd-flex justify-content-center align-items-center';
+        containerDiv.style.height = '100%'; // Optional: Adjust height if needed
+        containerDiv.style.marginTop = '30px'; // Add margin-top of 30px
+
+        // Append the container div to the panel
+        panel.appendChild(containerDiv);
+
+
+        // Create a list group
+        const listGroup = document.createElement('ul');
+        listGroup.className = 'list-group';
+
+        data.forEach(result => {
+            const listItem = document.createElement('li');
+            listItem.className = 'list-group-item';
+            listItem.textContent = `Chat: ${result.chatName}`; // Fixed string
+
+            // Add a click event listener
+            listItem.addEventListener('click', () => {
+                console.log(`Clicked on: Chat: ${result.chatName}`);
+                openChatById(result);
+            });
+
+            listGroup.appendChild(listItem);
+        });
+
+        // Append the list to the panel
+        containerDiv.appendChild(listGroup);
+        //panel.appendChild(listGroup);
+
+    } catch (error) {
+        console.error('Error searching chat:', error);
+    }
+}
+
 async function searchMessageForChat(keyword) {
     console.log('Searching for keyword:', keyword); // Log the keyword
     const token = localStorage.getItem('authToken');
@@ -1087,7 +1159,6 @@ async function searchMessageForChat(keyword) {
         // Append the container div to the panel
         panel.appendChild(containerDiv);
 
-
         // Create a list group
         const listGroup = document.createElement('ul');
         listGroup.className = 'list-group';
@@ -1098,10 +1169,9 @@ async function searchMessageForChat(keyword) {
             listItem.className = 'list-group-item';
             listItem.textContent = `Chat: ${result.chatName}, Message: ${result.message}, User: ${result.user}`;
 
-                // Add a click event listener
+            // Add a click event listener
             listItem.addEventListener('click', () => {
                 console.log(`Clicked on: Chat: ${result.chatName}, Message: ${result.message}, User: ${result.user}`);
-                    // Call your function here
                 openChatById(result);
             });
 
@@ -1110,14 +1180,12 @@ async function searchMessageForChat(keyword) {
 
         // Append the list to the panel
         containerDiv.appendChild(listGroup);
-        //panel.appendChild(listGroup);
-
     } catch (error) {
         console.error('Error searching messages:', error);
     }
 }
 
-function openChatById(result){
+function openChatById(result) {
     console.log('Opening chat by ID:', result.id);
     console.log('Opening chat by name:', result.chatName);
     clearPanel();
@@ -1182,7 +1250,7 @@ function createNavbar() {
             a.setAttribute('aria-current', item.ariaCurrent);
         }
 
-        if(item.id) {
+        if (item.id) {
             a.id = item.id;
         }
 
@@ -1368,8 +1436,8 @@ document.addEventListener('click', function (event) {
     }
     const changePassword = event.target.closest('#checkoutPasswordFormButton');
     if (changePassword) {
-         event.preventDefault();
-         changePasswordData();
+        event.preventDefault();
+        changePasswordData();
     }
     const modalClosePictureElement = event.target.closest('#modalClosePicture');
     if (modalClosePictureElement) {
@@ -1383,13 +1451,22 @@ document.addEventListener('click', function (event) {
         setProfileElements();
         loadProfileActivity("log-info", 5);
     }
-    const searchUserElement = event.target.closest('#button-search-chat');
-    if (searchUserElement) {
+    const searchMessageElement = event.target.closest('#button-search-chat');
+    if (searchMessageElement) {
         event.preventDefault();
         const searchMessage = document.getElementById('chat-message')?.value;
         console.log('Search user:', searchMessage);
         if (searchMessage) {
-            searchMessageForChat(searchMessage); // Pass the keyword, not a function
+            searchMessageForChat(searchMessage);
+        }
+    }
+    const searchChatElement = event.target.closest('#search-chat-button');
+    if (searchChatElement) {
+        event.preventDefault();
+        const searchChatWord = document.getElementById('search-chat-input')?.value;
+        console.log('Search chat:', searchChatWord);
+        if (searchChat) {
+            searchChat(searchChatWord);
         }
     }
 });
@@ -1429,6 +1506,6 @@ document.addEventListener('change', function (event) {
     }
 });
 
-window.onload = function() {
+window.onload = function () {
     getChat();
 }

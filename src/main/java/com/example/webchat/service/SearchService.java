@@ -1,5 +1,6 @@
 package com.example.webchat.service;
 
+import com.example.webchat.dto.ChatDTO;
 import com.example.webchat.dto.MessageChatDTO;
 import com.example.webchat.model.Chat;
 import com.example.webchat.model.Message;
@@ -19,8 +20,23 @@ public class SearchService {
     private final ChatRepository chatRepository;
     private final MessageRepository messageRepository;
 
-    public List<Chat> searchChats(String keyword) {
-        return chatRepository.findByChatNameContainingIgnoreCase(keyword);
+    public List<ChatDTO> searchChats(String keyword) {
+
+        List<Chat> chats = chatRepository.findByChatNameContainingIgnoreCase(keyword);
+        log.info(" Found {} chats with keyword: {}", chats.size(), keyword);
+
+        if (chats.isEmpty()) {
+            return List.of();
+        }
+
+        List<ChatDTO> chatDTOs = chats.stream()
+                .map(chat -> new ChatDTO(
+                        chat.getId(),
+                        chat.getChatName()
+                ))
+                .toList();
+
+        return chatDTOs;
     }
 
     public List<MessageChatDTO> searchMessages(String keyword) {

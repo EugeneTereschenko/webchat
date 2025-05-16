@@ -1110,6 +1110,17 @@ async function searchUser(keyword) {
         containerDiv.appendChild(listGroup);
         //panel.appendChild(listGroup);
 
+        const paginationDiv = document.createElement('div');
+        paginationDiv.id = 'pagination-container';
+        panel.appendChild(paginationDiv);
+
+        const containerPagination = document.getElementById('pagination-container'); // Example container
+        if (containerPagination) {
+            createPagination(3, containerPagination, "user");
+        } else {
+            console.error('Container element not found.');
+        }
+
     } catch (error) {
         console.error('Error searching chat:', error);
     }
@@ -1182,6 +1193,17 @@ async function searchChat(keyword) {
         containerDiv.appendChild(listGroup);
         //panel.appendChild(listGroup);
 
+        const paginationDiv = document.createElement('div');
+        paginationDiv.id = 'pagination-container';
+        panel.appendChild(paginationDiv);
+
+        const containerPagination = document.getElementById('pagination-container'); // Example container
+        if (containerPagination) {
+            createPagination(3, containerPagination, "chat");
+        } else {
+            console.error('Container element not found.');
+        }
+
     } catch (error) {
         console.error('Error searching chat:', error);
     }
@@ -1251,10 +1273,52 @@ async function searchMessageForChat(keyword) {
 
         // Append the list to the panel
         containerDiv.appendChild(listGroup);
+
+        // Create and append the pagination container
+        const paginationDiv = document.createElement('div');
+        paginationDiv.id = 'pagination-container';
+        panel.appendChild(paginationDiv);
+
+        const containerPagination = document.getElementById('pagination-container'); // Example container
+        if (containerPagination) {
+            createPagination(3, containerPagination, "message");
+        } else {
+            console.error('Container element not found.');
+        }
     } catch (error) {
         console.error('Error searching messages:', error);
     }
 }
+
+
+function searchRequest(i, type){
+
+    if (type == 'chat') {
+    const searchChatWord = document.getElementById('search-chat-input')?.value;
+    console.log('Search chat:', searchChatWord);
+        if (searchChat) {
+            searchChat(searchChatWord);
+        }
+    }
+
+    if (type == 'user') {
+    const searchUserWord = document.getElementById('search-user-input')?.value;
+    console.log('Search user:', searchUserWord);
+        if (searchUserWord) {
+            searchUser(searchUserWord);
+        }
+    }
+
+    if (type == 'message') {
+        const searchMessageWord = document.getElementById('chat-message')?.value;
+        console.log('Search message:', searchMessageWord);
+        if (searchMessageWord) {
+            searchMessageForChat(searchMessageWord);
+        }
+    }
+}
+
+
 
 function openChatById(result) {
     console.log('Opening chat by ID:', result.id);
@@ -1262,6 +1326,65 @@ function openChatById(result) {
     clearPanel();
     getChat();
     sendChatName(result.chatName);
+}
+
+function createPagination(num, paginationElementId, type) {
+    // Create a container div for centering
+    const containerDiv = document.createElement('div');
+    containerDiv.className = 'd-flex justify-content-center align-items-center';
+    containerDiv.style.marginTop = '20px'; // Optional: Add some spacing
+
+    const nav = document.createElement('nav');
+    nav.setAttribute('aria-label', 'Page navigation example');
+
+    const ul = document.createElement('ul');
+    ul.className = 'pagination';
+
+    // Create the "Previous" button
+    const prevLi = document.createElement('li');
+    prevLi.className = 'page-item';
+    const prevLink = document.createElement('a');
+    prevLink.className = 'page-link';
+    prevLink.href = '#';
+    prevLink.textContent = 'Previous';
+    prevLi.appendChild(prevLink);
+    ul.appendChild(prevLi);
+
+    // Create page items based on the num parameter
+    for (let i = 1; i <= num; i++) {
+        const li = document.createElement('li');
+        li.className = 'page-item';
+        const link = document.createElement('a');
+        link.className = 'page-link';
+        link.href = '#';
+        link.textContent = i;
+
+        // Add click event listener to call the search function
+        link.addEventListener('click', (event) => {
+            event.preventDefault(); // Prevent default link behavior
+            console.log(`Page ${i} clicked`);
+            searchRequest(i, type); // Call the search function with the page number
+        });
+
+        li.appendChild(link);
+        ul.appendChild(li);
+    }
+
+    // Create the "Next" button
+    const nextLi = document.createElement('li');
+    nextLi.className = 'page-item';
+    const nextLink = document.createElement('a');
+    nextLink.className = 'page-link';
+    nextLink.href = '#';
+    nextLink.textContent = 'Next';
+    nextLi.appendChild(nextLink);
+    ul.appendChild(nextLi);
+
+    nav.appendChild(ul);
+    containerDiv.appendChild(nav); // Append the nav to the container div
+
+    // Append the container div to the body or a specific container
+    paginationElementId.appendChild(containerDiv);
 }
 
 function createNavbar() {

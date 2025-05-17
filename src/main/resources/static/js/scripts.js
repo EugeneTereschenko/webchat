@@ -1,3 +1,9 @@
+let n = 1; // Current page number
+let currentPageUser = 1; // Initialize current page variable
+let currentPageMessage = 1; // Initialize current page variable
+let currentPageChat = 1; // Initialize current page variable
+
+
 function setCookie(name, value, days) {
     const d = new Date();
     d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
@@ -1111,10 +1117,10 @@ async function searchUser(keyword) {
         //panel.appendChild(listGroup);
 
         const paginationDiv = document.createElement('div');
-        paginationDiv.id = 'pagination-container';
+        paginationDiv.id = 'pagination-container-user';
         panel.appendChild(paginationDiv);
 
-        const containerPagination = document.getElementById('pagination-container'); // Example container
+        const containerPagination = document.getElementById('pagination-container-user'); // Example container
         if (containerPagination) {
             createPagination(3, containerPagination, "user");
         } else {
@@ -1194,10 +1200,10 @@ async function searchChat(keyword) {
         //panel.appendChild(listGroup);
 
         const paginationDiv = document.createElement('div');
-        paginationDiv.id = 'pagination-container';
+        paginationDiv.id = 'pagination-container-chat';
         panel.appendChild(paginationDiv);
 
-        const containerPagination = document.getElementById('pagination-container'); // Example container
+        const containerPagination = document.getElementById('pagination-container-chat'); // Example container
         if (containerPagination) {
             createPagination(3, containerPagination, "chat");
         } else {
@@ -1208,6 +1214,7 @@ async function searchChat(keyword) {
         console.error('Error searching chat:', error);
     }
 }
+
 
 async function searchMessageForChat(keyword) {
     console.log('Searching for keyword:', keyword); // Log the keyword
@@ -1280,6 +1287,7 @@ async function searchMessageForChat(keyword) {
         panel.appendChild(paginationDiv);
 
         const containerPagination = document.getElementById('pagination-container'); // Example container
+        console.log(" containerPagination " + containerPagination);
         if (containerPagination) {
             createPagination(3, containerPagination, "message");
         } else {
@@ -1291,8 +1299,8 @@ async function searchMessageForChat(keyword) {
 }
 
 
-function searchRequest(i, type){
-
+function searchRequest(i, type, type_search) {
+    console.log('Search request:', i, type, type_search);
     if (type == 'chat') {
     const searchChatWord = document.getElementById('search-chat-input')?.value;
     console.log('Search chat:', searchChatWord);
@@ -1329,10 +1337,10 @@ function openChatById(result) {
 }
 
 function createPagination(num, paginationElementId, type) {
-    // Create a container div for centering
+    console.log("create pagination");
     const containerDiv = document.createElement('div');
     containerDiv.className = 'd-flex justify-content-center align-items-center';
-    containerDiv.style.marginTop = '20px'; // Optional: Add some spacing
+    containerDiv.style.marginTop = '20px';
 
     const nav = document.createElement('nav');
     nav.setAttribute('aria-label', 'Page navigation example');
@@ -1340,18 +1348,38 @@ function createPagination(num, paginationElementId, type) {
     const ul = document.createElement('ul');
     ul.className = 'pagination';
 
-    // Create the "Previous" button
+    // "Previous" button
     const prevLi = document.createElement('li');
     prevLi.className = 'page-item';
     const prevLink = document.createElement('a');
     prevLink.className = 'page-link';
     prevLink.href = '#';
     prevLink.textContent = 'Previous';
+    prevLink.addEventListener('click', (event) => {
+        event.preventDefault();
+        if (n > 1) {
+            //n--; // Decrement page number
+            console.log('Previous page clicked, current page:', n);
+            if (type == 'chat' && currentPageChat > 1) {
+                currentPageChat--;
+                n = currentPageChat;
+            }
+            if (type == 'user' && currentPageUser > 1) {
+                currentPageUser--;
+                n = currentPageUser;
+            }
+            if (type == 'message' && currentPageMessage > 1) {
+                currentPageMessage--;
+                n = currentPageMessage;
+            }
+            searchRequest(n, type, "previous");
+        }
+    });
     prevLi.appendChild(prevLink);
     ul.appendChild(prevLi);
 
-    // Create page items based on the num parameter
-    for (let i = 1; i <= num; i++) {
+    // Page numbers
+    for (let i = n; i < n + num; i++) {
         const li = document.createElement('li');
         li.className = 'page-item';
         const link = document.createElement('a');
@@ -1359,31 +1387,47 @@ function createPagination(num, paginationElementId, type) {
         link.href = '#';
         link.textContent = i;
 
-        // Add click event listener to call the search function
         link.addEventListener('click', (event) => {
-            event.preventDefault(); // Prevent default link behavior
+            event.preventDefault();
+            n = i; // Set current page to clicked page
             console.log(`Page ${i} clicked`);
-            searchRequest(i, type); // Call the search function with the page number
+            searchRequest(n, type);
         });
 
         li.appendChild(link);
         ul.appendChild(li);
     }
 
-    // Create the "Next" button
+    // "Next" button
     const nextLi = document.createElement('li');
     nextLi.className = 'page-item';
     const nextLink = document.createElement('a');
     nextLink.className = 'page-link';
     nextLink.href = '#';
     nextLink.textContent = 'Next';
+    nextLink.addEventListener('click', (event) => {
+        event.preventDefault();
+        //n++; // Increment page number
+        if (type == 'chat') {
+            currentPageChat++;
+            n = currentPageChat;
+        }
+        if (type == 'user') {
+            currentPageUser++;
+            n = currentPageUser;
+        }
+        if (type == 'message') {
+            currentPageMessage++;
+            n = currentPageMessage;
+        }
+        console.log('Next page clicked, current page:', n);
+        searchRequest(n, type, "next");
+    });
     nextLi.appendChild(nextLink);
     ul.appendChild(nextLi);
 
     nav.appendChild(ul);
-    containerDiv.appendChild(nav); // Append the nav to the container div
-
-    // Append the container div to the body or a specific container
+    containerDiv.appendChild(nav);
     paginationElementId.appendChild(containerDiv);
 }
 
@@ -1649,8 +1693,9 @@ document.addEventListener('click', function (event) {
     if (searchMessageElement) {
         event.preventDefault();
         const searchMessage = document.getElementById('chat-message')?.value;
-        console.log('Search user:', searchMessage);
+        console.log('Search message:', searchMessage);
         if (searchMessage) {
+            clearPanel();
             searchMessageForChat(searchMessage);
         }
     }

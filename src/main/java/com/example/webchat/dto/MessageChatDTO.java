@@ -10,6 +10,7 @@ import lombok.ToString;
 @Getter
 @Setter
 public class MessageChatDTO {
+    private Long id;
     private String user;
     private String message;
     private String chatName;

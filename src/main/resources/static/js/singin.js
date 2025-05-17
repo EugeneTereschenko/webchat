@@ -175,13 +175,6 @@ function getTwoFactorCode() {
     return code;
 }
 
-// Example usage:
-/*
-const twoFactorCode = getTwoFactorCode();
-if (twoFactorCode) {
-    console.log('Two-factor code:', twoFactorCode);
-}*/
-
 document.addEventListener('click', function (event) {
     console.log("Event target:", event.target);
 

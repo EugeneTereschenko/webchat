@@ -86,4 +86,19 @@ public class ViewController {
         return new ModelAndView("twofasecurity");
     }
 
+
+    @GetMapping("/search/chat")
+    public ModelAndView searchChat() {
+
+        log.info("Search chat attempt for user: get search chat ");
+        return new ModelAndView("search/searchchat");
+    }
+
+    @GetMapping("/search/user")
+    public ModelAndView searchUser() {
+
+        log.info("Search chat attempt for user: get search chat ");
+        return new ModelAndView("search/searchuser");
+    }
+
 }

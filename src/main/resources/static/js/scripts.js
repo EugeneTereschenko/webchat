@@ -1050,7 +1050,7 @@ async function getChat() {
     }
 }
 
-async function searchUser(keyword) {
+async function searchUser(keyword, page) {
     console.log('Searching for keyword:', keyword); // Log the keyword
     const token = localStorage.getItem('authToken');
 
@@ -1060,7 +1060,7 @@ async function searchUser(keyword) {
     }
 
     try {
-        const response = await fetch(`/chat/api/search/users?keyword=${encodeURIComponent(keyword)}`, {
+        const response = await fetch(`/chat/api/search/users?keyword=${encodeURIComponent(keyword)}&page=${encodeURIComponent(page)}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -1133,7 +1133,7 @@ async function searchUser(keyword) {
 }
 
 
-async function searchChat(keyword) {
+async function searchChat(keyword, page) {
     console.log('Searching for keyword:', keyword); // Log the keyword
     const token = localStorage.getItem('authToken');
 
@@ -1143,7 +1143,7 @@ async function searchChat(keyword) {
     }
 
     try {
-        const response = await fetch(`/chat/api/search/chats?keyword=${encodeURIComponent(keyword)}`, {
+        const response = await fetch(`/chat/api/search/chats?keyword=${encodeURIComponent(keyword)}&page=${encodeURIComponent(page)}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -1216,7 +1216,7 @@ async function searchChat(keyword) {
 }
 
 
-async function searchMessageForChat(keyword) {
+async function searchMessageForChat(keyword, page) {
     console.log('Searching for keyword:', keyword); // Log the keyword
     const token = localStorage.getItem('authToken');
 
@@ -1226,7 +1226,7 @@ async function searchMessageForChat(keyword) {
     }
 
     try {
-        const response = await fetch(`/chat/api/search/messages?keyword=${encodeURIComponent(keyword)}`, {
+        const response = await fetch(`/chat/api/search/messages?keyword=${encodeURIComponent(keyword)}&page=${encodeURIComponent(page)}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -1299,8 +1299,8 @@ async function searchMessageForChat(keyword) {
 }
 
 
-function searchRequest(i, type, type_search) {
-    console.log('Search request:', i, type, type_search);
+function searchRequest(type) {
+    console.log('Search request:', type);
     if (type == 'chat') {
     const searchChatWord = document.getElementById('search-chat-input')?.value;
     console.log('Search chat:', searchChatWord);
@@ -1321,7 +1321,7 @@ function searchRequest(i, type, type_search) {
         const searchMessageWord = document.getElementById('chat-message')?.value;
         console.log('Search message:', searchMessageWord);
         if (searchMessageWord) {
-            searchMessageForChat(searchMessageWord);
+            searchMessageForChat(searchMessageWord, currentPageMessage);
         }
     }
 }
@@ -1361,22 +1361,27 @@ function createPagination(num, paginationElementId, type) {
             //n--; // Decrement page number
             console.log('Previous page clicked, current page:', n);
             if (type == 'chat' && currentPageChat > 1) {
+                currentPageChat -= num;
                 currentPageChat--;
                 n = currentPageChat;
             }
             if (type == 'user' && currentPageUser > 1) {
+                currentPageUser -= num;
                 currentPageUser--;
                 n = currentPageUser;
             }
             if (type == 'message' && currentPageMessage > 1) {
+                currentPageMessage -= num;
                 currentPageMessage--;
                 n = currentPageMessage;
             }
-            searchRequest(n, type, "previous");
+            searchRequest(type);
         }
     });
     prevLi.appendChild(prevLink);
     ul.appendChild(prevLi);
+
+
 
     // Page numbers
     for (let i = n; i < n + num; i++) {
@@ -1385,13 +1390,25 @@ function createPagination(num, paginationElementId, type) {
         const link = document.createElement('a');
         link.className = 'page-link';
         link.href = '#';
-        link.textContent = i;
+
+        if (type == 'chat') {
+            link.textContent = currentPageChat;
+            currentPageChat++;
+        }
+        if (type == 'user') {
+            link.textContent = currentPageUser;
+            currentPageUser++;
+        }
+        if (type == 'message') {
+            link.textContent = currentPageMessage;
+            currentPageMessage++;
+        }
 
         link.addEventListener('click', (event) => {
             event.preventDefault();
             n = i; // Set current page to clicked page
             console.log(`Page ${i} clicked`);
-            searchRequest(n, type);
+            searchRequest(type);
         });
 
         li.appendChild(link);
@@ -1421,7 +1438,7 @@ function createPagination(num, paginationElementId, type) {
             n = currentPageMessage;
         }
         console.log('Next page clicked, current page:', n);
-        searchRequest(n, type, "next");
+        searchRequest(type);
     });
     nextLi.appendChild(nextLink);
     ul.appendChild(nextLi);
@@ -1696,7 +1713,7 @@ document.addEventListener('click', function (event) {
         console.log('Search message:', searchMessage);
         if (searchMessage) {
             clearPanel();
-            searchMessageForChat(searchMessage);
+            searchMessageForChat(searchMessage, currentPageMessage);
         }
     }
     const searchChatElement = event.target.closest('#search-chat-button');

@@ -1,3 +1,9 @@
+let n = 1; // Current page number
+//let currentPageUser = 1; // Initialize current page variable
+//let currentPageMessage = 1; // Initialize current page variable
+//let currentPageChat = 1; // Initialize current page variable
+
+
 function setCookie(name, value, days) {
     const d = new Date();
     d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
@@ -30,6 +36,15 @@ function clearPanel() {
     }
 }
 
+function clearModal() {
+    const panel = document.getElementById('modal-container');
+    if (panel) {
+        panel.innerHTML = ''; // Clear all existing content in the panel
+    } else {
+        console.error('Element with id "modal-container" not found.');
+    }
+}
+
 function clearProfileContent() {
     const content = document.getElementById('profile-content');
     if (content) {
@@ -42,14 +57,14 @@ function clearProfileContent() {
 function setProfileElements() {
     const profileContent = document.getElementById('profile-content');
     profileContent.innerHTML = "<section style=\"background-color: #eee;\">" +
-                                    "<div class=\"container py-5\">" +
-                                        "<div class=\"row d-flex justify-content-center\">" +
-                                            "<div class=\"col-md-12 col-lg-10 col-xl-8\">" +
-                                                "<div id=\"log-info\"></div>" +
-                                            "</div>" +
-                                        "</div>" +
-                                    "</div>" +
-                                "</section>";
+        "<div class=\"container py-5\">" +
+        "<div class=\"row d-flex justify-content-center\">" +
+        "<div class=\"col-md-12 col-lg-10 col-xl-8\">" +
+        "<div id=\"log-info\"></div>" +
+        "</div>" +
+        "</div>" +
+        "</div>" +
+        "</section>";
 }
 
 async function checkAuth() {
@@ -61,7 +76,7 @@ async function checkAuth() {
     }
 
     try {
-        const response = await fetch('/api/check-auth', {
+        const response = await fetch('/chat/api/check-auth', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -140,11 +155,16 @@ async function updateNotification(notification) {
 
 async function fetchChatMessages() {
     const token = localStorage.getItem('authToken'); // Retrieve the auth token
-    const chatName = document.getElementById('chat-name').value;
+    var chatName = document.getElementById('chat-name')?.value;
+    const chatNameFromChat = document.getElementById('chat-name-value')?.textContent;
 
     if (!token) {
         console.error('No auth token found');
         return;
+    }
+
+    if (chatNameFromChat) {
+        chatName = chatNameFromChat; // Use the chat name from the chat element
     }
 
     if (!chatName) {
@@ -188,7 +208,7 @@ async function fetchChatMessages() {
 
 async function fetchUser() {
     const token = localStorage.getItem('authToken');
-    const chatName = document.getElementById('chat-name').value;
+    const chatName = document.getElementById('chat-name')?.value;
 
     if (!token) {
         console.error('No auth token found');
@@ -221,7 +241,7 @@ async function fetchUser() {
 
 async function fetchUsers() {
     const token = localStorage.getItem('authToken');
-    const chatName = document.getElementById('chat-name').value;
+    const chatName = document.getElementById('chat-name')?.value;
 
     if (!token) {
         console.error('No auth token found');
@@ -317,6 +337,74 @@ async function loadProfileData() {
     }
 }
 
+async function loadSearchUser() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/search/user', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to load search user: ${response.status}`);
+        }
+
+        const html = await response.text(); // Parse the response as text (HTML)
+        const modalContainer = document.getElementById('modal-container'); // Ensure a modal container exists
+        if (modalContainer) {
+            modalContainer.innerHTML = html; // Inject the HTML content into the modal container
+            const modal = new bootstrap.Modal(modalContainer.querySelector('.modal')); // Initialize the modal
+            modal.show(); // Show the modal
+        } else {
+            console.error('Modal container not found.');
+        }
+    } catch (error) {
+        console.error('Error loading search user:', error);
+    }
+}
+
+async function loadSearchChat() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/search/chat', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to load search chat: ${response.status}`);
+        }
+
+        const html = await response.text(); // Parse the response as text (HTML)
+        const modalContainer = document.getElementById('modal-container'); // Ensure a modal container exists
+        if (modalContainer) {
+            modalContainer.innerHTML = html; // Inject the HTML content into the modal container
+            const modal = new bootstrap.Modal(modalContainer.querySelector('.modal')); // Initialize the modal
+            modal.show(); // Show the modal
+        } else {
+            console.error('Modal container not found.');
+        }
+    } catch (error) {
+        console.error('Error loading search chat:', error);
+    }
+}
+
 async function loadProfile() {
     const panel = document.getElementById('panel');
     const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
@@ -388,7 +476,7 @@ async function loadBillingData() {
     }
 
     try {
-        const response = await fetch('api/allProfiles', {
+        const response = await fetch('/chat/api/allProfiles', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
@@ -487,7 +575,7 @@ async function changePasswordData() {
     };
 
     try {
-        const response = await fetch('api/change-password', {
+        const response = await fetch('/chat/api/change-password', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -767,41 +855,41 @@ async function addPhoto() {
 
 
 async function sendChatMessage() {
-        const token = localStorage.getItem('authToken');
-        chatName = document.getElementById('chat-name').value
-        if (!chatName) {
-            const modal = new bootstrap.Modal(document.getElementById('messageModal'));
-            modal.show();
-            return;
-        }
-        if (!token) {
-           console.error('No auth token found');
-           return;
-        }
+    const token = localStorage.getItem('authToken');
+    const chatName = document.getElementById('chat-name-value')?.value;
+    if (!chatName) {
+        const modal = new bootstrap.Modal(document.getElementById('messageModal'));
+        modal.show();
+        return;
+    }
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
 
-        const messageChatData = {
-            user: document.getElementById('message-user').value,
-            message: document.getElementById('message-message').value,
-            chatName: document.getElementById('chat-name').value
-        };
-        console.log('Message     data:', messageChatData);
+    const messageChatData = {
+        user: document.getElementById('message-user').value,
+        message: document.getElementById('message-message').value,
+        chatName: document.getElementById('chat-name')?.value
+    };
+    console.log('Message     data:', messageChatData);
 
-        try {
-            response = await fetch('/chat/api/chatAdd', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                    },
-                body: JSON.stringify(messageChatData)
-            })
-            if (response.ok) {
-                console.log('Message saved successfully');
-                fetchChatMessages();
-            }
-        } catch (error) {
-            console.error('Failed to save message', error);
+    try {
+        response = await fetch('/chat/api/chatAdd', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(messageChatData)
+        })
+        if (response.ok) {
+            console.log('Message saved successfully');
+            fetchChatMessages();
         }
+    } catch (error) {
+        console.error('Failed to save message', error);
+    }
 }
 
 
@@ -853,9 +941,13 @@ async function loadProfileActivity(idElement, numOfElements) {
     }
 }
 
-async function sendChatName() {
+async function sendChatName(chatNameToOpen) {
     const token = localStorage.getItem('authToken');
-    const chatName = document.getElementById('chat-name').value;
+    let chatName = document.getElementById('chat-name')?.value; // Changed to let
+
+    if (chatNameToOpen) {
+        chatName = chatNameToOpen; // Now reassignment works
+    }
 
     if (!chatName) {
         console.error('Chat name is required');
@@ -880,7 +972,7 @@ async function sendChatName() {
         });
 
         if (!response.ok) {
-            const errorText = await response.text(); // Read the response as text
+            const errorText = await response.text();
             console.error('Error creating chat:', errorText);
             return;
         }
@@ -958,6 +1050,374 @@ async function getChat() {
     }
 }
 
+async function searchUser(keyword, page) {
+    console.log('Searching for keyword:', keyword); // Log the keyword
+    const token = localStorage.getItem('authToken');
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/api/search/users?keyword=${encodeURIComponent(keyword)}&page=${encodeURIComponent(page)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to search user: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Search results:', data);
+
+        // Get the panel element
+        const panel = document.getElementById('search-user-results');
+        if (!panel) {
+            console.error('Panel element not found');
+            return;
+        }
+
+        // Clear previous content
+        panel.innerHTML = '';
+
+        // Create a container div
+        const containerDiv = document.createElement('div');
+        containerDiv.className = 'd-flex justify-content-center align-items-center';
+        containerDiv.style.height = '100%'; // Optional: Adjust height if needed
+        containerDiv.style.marginTop = '30px'; // Add margin-top of 30px
+
+        // Append the container div to the panel
+        panel.appendChild(containerDiv);
+
+
+        // Create a list group
+        const listGroup = document.createElement('ul');
+        listGroup.className = 'list-group';
+
+        data.forEach(result => {
+            const listItem = document.createElement('li');
+            listItem.className = 'list-group-item';
+            listItem.textContent = `Chat: ${result.user}`; // Fixed string
+
+            // Add a click event listener
+            listItem.addEventListener('click', () => {
+                console.log(`Clicked on: Chat: ${result.user}`);
+                openChatById(result);
+            });
+
+            listGroup.appendChild(listItem);
+        });
+
+        // Append the list to the panel
+        containerDiv.appendChild(listGroup);
+        //panel.appendChild(listGroup);
+
+        const paginationDiv = document.createElement('div');
+        paginationDiv.id = 'pagination-container-user';
+        panel.appendChild(paginationDiv);
+
+        const containerPagination = document.getElementById('pagination-container-user'); // Example container
+        if (containerPagination) {
+            createPagination(3, containerPagination, "user");
+        } else {
+            console.error('Container element not found.');
+        }
+
+    } catch (error) {
+        console.error('Error searching chat:', error);
+    }
+}
+
+
+async function searchChat(keyword, page) {
+    console.log('Searching for keyword:', keyword); // Log the keyword
+    const token = localStorage.getItem('authToken');
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/api/search/chats?keyword=${encodeURIComponent(keyword)}&page=${encodeURIComponent(page)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to search chat: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Search results:', data);
+
+        // Get the panel element
+        const panel = document.getElementById('search-chat-results');
+        if (!panel) {
+            console.error('Panel element not found');
+            return;
+        }
+
+        // Clear previous content
+        panel.innerHTML = '';
+
+        // Create a container div
+        const containerDiv = document.createElement('div');
+        containerDiv.className = 'd-flex justify-content-center align-items-center';
+        containerDiv.style.height = '100%'; // Optional: Adjust height if needed
+        containerDiv.style.marginTop = '30px'; // Add margin-top of 30px
+
+        // Append the container div to the panel
+        panel.appendChild(containerDiv);
+
+
+        // Create a list group
+        const listGroup = document.createElement('ul');
+        listGroup.className = 'list-group';
+
+        data.forEach(result => {
+            const listItem = document.createElement('li');
+            listItem.className = 'list-group-item';
+            listItem.textContent = `Chat: ${result.chatName}`; // Fixed string
+
+            // Add a click event listener
+            listItem.addEventListener('click', () => {
+                console.log(`Clicked on: Chat: ${result.chatName}`);
+                openChatById(result);
+            });
+
+            listGroup.appendChild(listItem);
+        });
+
+        // Append the list to the panel
+        containerDiv.appendChild(listGroup);
+        //panel.appendChild(listGroup);
+
+        const paginationDiv = document.createElement('div');
+        paginationDiv.id = 'pagination-container-chat';
+        panel.appendChild(paginationDiv);
+
+        const containerPagination = document.getElementById('pagination-container-chat'); // Example container
+        if (containerPagination) {
+            createPagination(3, containerPagination, "chat");
+        } else {
+            console.error('Container element not found.');
+        }
+
+    } catch (error) {
+        console.error('Error searching chat:', error);
+    }
+}
+
+
+async function searchMessageForChat(keyword, page) {
+    console.log('Searching for keyword:', keyword); // Log the keyword
+    const token = localStorage.getItem('authToken');
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/api/search/messages?keyword=${encodeURIComponent(keyword)}&page=${encodeURIComponent(page)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to search messages: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Search results:', data);
+
+        // Get the panel element
+        const panel = document.getElementById('panel');
+        if (!panel) {
+            console.error('Panel element not found');
+            return;
+        }
+
+        // Clear previous content
+        panel.innerHTML = '';
+
+        // Create a container div
+        const containerDiv = document.createElement('div');
+        containerDiv.className = 'd-flex justify-content-center align-items-center';
+        containerDiv.style.height = '100%'; // Optional: Adjust height if needed
+        containerDiv.style.marginTop = '30px'; // Add margin-top of 30px
+
+        // Append the container div to the panel
+        panel.appendChild(containerDiv);
+
+        // Create a list group
+        const listGroup = document.createElement('ul');
+        listGroup.className = 'list-group';
+
+        // Populate the list with search results
+        data.forEach(result => {
+            const listItem = document.createElement('li');
+            listItem.className = 'list-group-item';
+            listItem.textContent = `Chat: ${result.chatName}, Message: ${result.message}, User: ${result.user}`;
+
+            // Add a click event listener
+            listItem.addEventListener('click', () => {
+                console.log(`Clicked on: Chat: ${result.chatName}, Message: ${result.message}, User: ${result.user}`);
+                openChatById(result);
+            });
+
+            listGroup.appendChild(listItem);
+        });
+
+        // Append the list to the panel
+        containerDiv.appendChild(listGroup);
+
+        // Create and append the pagination container
+        const paginationDiv = document.createElement('div');
+        paginationDiv.id = 'pagination-container';
+        panel.appendChild(paginationDiv);
+
+        const containerPagination = document.getElementById('pagination-container'); // Example container
+        console.log(" containerPagination " + containerPagination);
+        if (containerPagination) {
+            createPagination(3, containerPagination, "message");
+        } else {
+            console.error('Container element not found.');
+        }
+    } catch (error) {
+        console.error('Error searching messages:', error);
+    }
+}
+
+
+function searchRequest(type, current) {
+    console.log('Search request:', type);
+    if (type == 'chat') {
+    const searchChatWord = document.getElementById('search-chat-input')?.value;
+    console.log('Search chat:', searchChatWord);
+        if (searchChat) {
+            searchChat(searchChatWord, current);
+        }
+    }
+
+    if (type == 'user') {
+    const searchUserWord = document.getElementById('search-user-input')?.value;
+    console.log('Search user:', searchUserWord);
+        if (searchUserWord) {
+            searchUser(searchUserWord, current);
+        }
+    }
+
+    if (type == 'message') {
+        const searchMessageWord = document.getElementById('chat-message')?.value;
+        console.log('Search message:', searchMessageWord);
+        if (searchMessageWord) {
+            searchMessageForChat(searchMessageWord, current);
+        }
+    }
+}
+
+
+
+function openChatById(result) {
+    console.log('Opening chat by ID:', result.id);
+    console.log('Opening chat by name:', result.chatName);
+    clearPanel();
+    getChat();
+    sendChatName(result.chatName);
+}
+
+function createPagination(num, paginationElementId, type) {
+    console.log("create pagination");
+    const containerDiv = document.createElement('div');
+    containerDiv.className = 'd-flex justify-content-center align-items-center';
+    containerDiv.style.marginTop = '20px';
+
+    const nav = document.createElement('nav');
+    nav.setAttribute('aria-label', 'Page navigation example');
+
+    const ul = document.createElement('ul');
+    ul.className = 'pagination';
+
+    // "Previous" button
+    const prevLi = document.createElement('li');
+    prevLi.className = 'page-item';
+    const prevLink = document.createElement('a');
+    prevLink.className = 'page-link';
+    prevLink.href = '#';
+    prevLink.textContent = 'Previous';
+    prevLink.addEventListener('click', (event) => {
+        event.preventDefault();
+        if (n > 1) {
+            n--; // Decrement page number
+            console.log('Previous page clicked, current page:', n);
+            searchRequest(type, n);
+        }
+    });
+    prevLi.appendChild(prevLink);
+    ul.appendChild(prevLi);
+
+
+
+    // Page numbers
+    for (let i = n; i < n + num; i++) {
+        const li = document.createElement('li');
+        li.className = 'page-item';
+        const link = document.createElement('a');
+        link.className = 'page-link';
+        link.href = '#';
+
+        if (type == 'chat') {
+            link.textContent = i;
+        }
+        if (type == 'user') {
+            link.textContent = i;
+        }
+        if (type == 'message') {
+            link.textContent = i;
+        }
+
+        link.addEventListener('click', (event) => {
+            event.preventDefault();
+            n = i; // Set current page to clicked page
+            console.log(`Page ${i} clicked`);
+            searchRequest(type, i);
+        });
+
+        li.appendChild(link);
+        ul.appendChild(li);
+    }
+
+    // "Next" button
+    const nextLi = document.createElement('li');
+    nextLi.className = 'page-item';
+    const nextLink = document.createElement('a');
+    nextLink.className = 'page-link';
+    nextLink.href = '#';
+    nextLink.textContent = 'Next';
+    nextLink.addEventListener('click', (event) => {
+        event.preventDefault();
+        n++; // Increment page number
+        console.log('Next page clicked, current page:', n);
+        searchRequest(type, n);
+    });
+    nextLi.appendChild(nextLink);
+    ul.appendChild(nextLi);
+
+    nav.appendChild(ul);
+    containerDiv.appendChild(nav);
+    paginationElementId.appendChild(containerDiv);
+}
+
 function createNavbar() {
     // Create the main nav element
     const nav = document.createElement('nav');
@@ -1015,7 +1475,7 @@ function createNavbar() {
             a.setAttribute('aria-current', item.ariaCurrent);
         }
 
-        if(item.id) {
+        if (item.id) {
             a.id = item.id;
         }
 
@@ -1040,9 +1500,9 @@ function createNavbar() {
 
     const dropdownItems = [
         { text: 'Profile', href: '#', id: 'profile-link', className: 'dropdown-item' },
-        { text: 'Search User', href: '#', className: 'dropdown-item' },
+        { text: 'Search User', href: '#', id: 'search-user-link', className: 'dropdown-item' },
         { isDivider: true },
-        { text: 'Search Chat', href: '#', className: 'dropdown-item' },
+        { text: 'Search Chat', href: '#', id: 'search-chat-link', className: 'dropdown-item' },
     ];
 
     dropdownItems.forEach(item => {
@@ -1093,11 +1553,13 @@ function createNavbar() {
     input.type = 'search';
     input.placeholder = 'Search';
     input.setAttribute('aria-label', 'Search');
+    input.id = 'chat-message';
 
     const button = document.createElement('button');
     button.className = 'btn btn-outline-success';
     button.type = 'submit';
     button.textContent = 'Search';
+    button.id = 'button-search-chat';
 
     form.appendChild(input);
     form.appendChild(button);
@@ -1123,7 +1585,7 @@ document.addEventListener('click', function (event) {
         clearProfileContent();
         fetchCard();
     }
-    const chatCreate = event.target.closest('#button-custom-chat-create');
+    const chatCreate = event.target.closest('#button-add-chat');
     if (chatCreate) {
         event.preventDefault();
         //createChat();
@@ -1141,6 +1603,19 @@ document.addEventListener('click', function (event) {
         event.preventDefault();
         clearPanel();
         loadProfile();
+    }
+    const searchUserLink = event.target.closest('#search-user-link');
+    if (searchUserLink) {
+        event.preventDefault();
+        //clearPanel();
+        loadSearchUser();
+    }
+    const searchChatLink = event.target.closest('#search-chat-link');
+    if (searchChatLink) {
+        event.preventDefault();
+        //clearPanel();
+        loadSearchChat();
+        //getChat();
     }
 
     const homeButton = event.target.closest('#home-button');
@@ -1186,8 +1661,8 @@ document.addEventListener('click', function (event) {
     }
     const changePassword = event.target.closest('#checkoutPasswordFormButton');
     if (changePassword) {
-         event.preventDefault();
-         changePasswordData();
+        event.preventDefault();
+        changePasswordData();
     }
     const modalClosePictureElement = event.target.closest('#modalClosePicture');
     if (modalClosePictureElement) {
@@ -1200,6 +1675,37 @@ document.addEventListener('click', function (event) {
         clearProfileContent();
         setProfileElements();
         loadProfileActivity("log-info", 5);
+    }
+    const searchMessageElement = event.target.closest('#button-search-chat');
+    if (searchMessageElement) {
+        event.preventDefault();
+        n = 1;
+        const searchMessage = document.getElementById('chat-message')?.value;
+        console.log('Search message:', searchMessage);
+        if (searchMessage) {
+            clearPanel();
+            searchMessageForChat(searchMessage, n);
+        }
+    }
+    const searchChatElement = event.target.closest('#search-chat-button');
+    if (searchChatElement) {
+        event.preventDefault();
+        n = 1;
+        const searchChatWord = document.getElementById('search-chat-input')?.value;
+        console.log('Search chat:', searchChatWord);
+        if (searchChat) {
+            searchChat(searchChatWord, n);
+        }
+    }
+    const searchUserElement = event.target.closest('#search-user-button');
+    if (searchUserElement) {
+        event.preventDefault();
+        n = 1;
+        const searchUserWord = document.getElementById('search-user-input')?.value;
+        console.log('Search user:', searchUserWord);
+        if (searchUserWord) {
+            searchUser(searchUserWord, n);
+        }
     }
 });
 
@@ -1238,6 +1744,6 @@ document.addEventListener('change', function (event) {
     }
 });
 
-window.onload = function() {
+window.onload = function () {
     getChat();
 }

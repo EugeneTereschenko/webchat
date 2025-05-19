@@ -23,20 +23,20 @@ public class SearchController {
     public ResponseEntity<List<ChatDTO>> searchChats(@RequestParam String keyword, @RequestParam String page) {
         log.debug(" Page : {}", page);
         log.debug(" Searching chat with keyword: {}", keyword);
-        return ResponseEntity.ok().body(searchService.searchChats(keyword));
+        return ResponseEntity.ok().body(searchService.searchChats(keyword, page));
     }
 
     @GetMapping("/api/search/messages")
     public ResponseEntity<List<MessageChatDTO>> searchMessages(@RequestParam String keyword, @RequestParam String page) {
         log.debug(" Page : {}", page);
         log.debug(" Searching messages with keyword: {}", keyword);
-        return ResponseEntity.ok().body(searchService.searchMessages(keyword));
+        return ResponseEntity.ok().body(searchService.searchMessages(keyword, page));
     }
 
     @GetMapping("/api/search/users")
     public ResponseEntity<List<MessageChatDTO>> searchUsers(@RequestParam String keyword, @RequestParam String page) {
         log.debug(" Page : {}", page);
         log.debug(" Searching chat with keyword: {}", keyword);
-        return ResponseEntity.ok().body(searchService.searchUsers(keyword));
+        return ResponseEntity.ok().body(searchService.searchUsers(keyword, page));
     }
 }

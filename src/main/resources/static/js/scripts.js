@@ -1,7 +1,7 @@
 let n = 1; // Current page number
-let currentPageUser = 1; // Initialize current page variable
-let currentPageMessage = 1; // Initialize current page variable
-let currentPageChat = 1; // Initialize current page variable
+//let currentPageUser = 1; // Initialize current page variable
+//let currentPageMessage = 1; // Initialize current page variable
+//let currentPageChat = 1; // Initialize current page variable
 
 
 function setCookie(name, value, days) {
@@ -856,7 +856,7 @@ async function addPhoto() {
 
 async function sendChatMessage() {
     const token = localStorage.getItem('authToken');
-    const chatName = document.getElementById('chat-name')?.value;
+    const chatName = document.getElementById('chat-name-value')?.value;
     if (!chatName) {
         const modal = new bootstrap.Modal(document.getElementById('messageModal'));
         modal.show();
@@ -1299,13 +1299,13 @@ async function searchMessageForChat(keyword, page) {
 }
 
 
-function searchRequest(type) {
+function searchRequest(type, current) {
     console.log('Search request:', type);
     if (type == 'chat') {
     const searchChatWord = document.getElementById('search-chat-input')?.value;
     console.log('Search chat:', searchChatWord);
         if (searchChat) {
-            searchChat(searchChatWord);
+            searchChat(searchChatWord, current);
         }
     }
 
@@ -1313,7 +1313,7 @@ function searchRequest(type) {
     const searchUserWord = document.getElementById('search-user-input')?.value;
     console.log('Search user:', searchUserWord);
         if (searchUserWord) {
-            searchUser(searchUserWord);
+            searchUser(searchUserWord, current);
         }
     }
 
@@ -1321,7 +1321,7 @@ function searchRequest(type) {
         const searchMessageWord = document.getElementById('chat-message')?.value;
         console.log('Search message:', searchMessageWord);
         if (searchMessageWord) {
-            searchMessageForChat(searchMessageWord, currentPageMessage);
+            searchMessageForChat(searchMessageWord, current);
         }
     }
 }
@@ -1358,24 +1358,9 @@ function createPagination(num, paginationElementId, type) {
     prevLink.addEventListener('click', (event) => {
         event.preventDefault();
         if (n > 1) {
-            //n--; // Decrement page number
+            n--; // Decrement page number
             console.log('Previous page clicked, current page:', n);
-            if (type == 'chat' && currentPageChat > 1) {
-                currentPageChat -= num;
-                currentPageChat--;
-                n = currentPageChat;
-            }
-            if (type == 'user' && currentPageUser > 1) {
-                currentPageUser -= num;
-                currentPageUser--;
-                n = currentPageUser;
-            }
-            if (type == 'message' && currentPageMessage > 1) {
-                currentPageMessage -= num;
-                currentPageMessage--;
-                n = currentPageMessage;
-            }
-            searchRequest(type);
+            searchRequest(type, n);
         }
     });
     prevLi.appendChild(prevLink);
@@ -1392,23 +1377,20 @@ function createPagination(num, paginationElementId, type) {
         link.href = '#';
 
         if (type == 'chat') {
-            link.textContent = currentPageChat;
-            currentPageChat++;
+            link.textContent = i;
         }
         if (type == 'user') {
-            link.textContent = currentPageUser;
-            currentPageUser++;
+            link.textContent = i;
         }
         if (type == 'message') {
-            link.textContent = currentPageMessage;
-            currentPageMessage++;
+            link.textContent = i;
         }
 
         link.addEventListener('click', (event) => {
             event.preventDefault();
             n = i; // Set current page to clicked page
             console.log(`Page ${i} clicked`);
-            searchRequest(type);
+            searchRequest(type, i);
         });
 
         li.appendChild(link);
@@ -1424,21 +1406,9 @@ function createPagination(num, paginationElementId, type) {
     nextLink.textContent = 'Next';
     nextLink.addEventListener('click', (event) => {
         event.preventDefault();
-        //n++; // Increment page number
-        if (type == 'chat') {
-            currentPageChat++;
-            n = currentPageChat;
-        }
-        if (type == 'user') {
-            currentPageUser++;
-            n = currentPageUser;
-        }
-        if (type == 'message') {
-            currentPageMessage++;
-            n = currentPageMessage;
-        }
+        n++; // Increment page number
         console.log('Next page clicked, current page:', n);
-        searchRequest(type);
+        searchRequest(type, n);
     });
     nextLi.appendChild(nextLink);
     ul.appendChild(nextLi);
@@ -1709,29 +1679,32 @@ document.addEventListener('click', function (event) {
     const searchMessageElement = event.target.closest('#button-search-chat');
     if (searchMessageElement) {
         event.preventDefault();
+        n = 1;
         const searchMessage = document.getElementById('chat-message')?.value;
         console.log('Search message:', searchMessage);
         if (searchMessage) {
             clearPanel();
-            searchMessageForChat(searchMessage, currentPageMessage);
+            searchMessageForChat(searchMessage, n);
         }
     }
     const searchChatElement = event.target.closest('#search-chat-button');
     if (searchChatElement) {
         event.preventDefault();
+        n = 1;
         const searchChatWord = document.getElementById('search-chat-input')?.value;
         console.log('Search chat:', searchChatWord);
         if (searchChat) {
-            searchChat(searchChatWord);
+            searchChat(searchChatWord, n);
         }
     }
     const searchUserElement = event.target.closest('#search-user-button');
     if (searchUserElement) {
         event.preventDefault();
+        n = 1;
         const searchUserWord = document.getElementById('search-user-input')?.value;
         console.log('Search user:', searchUserWord);
         if (searchUserWord) {
-            searchUser(searchUserWord);
+            searchUser(searchUserWord, n);
         }
     }
 });

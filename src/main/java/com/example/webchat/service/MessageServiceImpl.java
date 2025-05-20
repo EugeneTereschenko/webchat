@@ -32,6 +32,15 @@ public class MessageServiceImpl implements MessageService {
         return Optional.of(messageToSave);
     }
 
+    @Override
+    public Optional<Message> updateMessage(Message message) {
+        return messageRepository.findById(message.getId())
+                .map(existingMessage -> {
+                    existingMessage.setUser(Optional.ofNullable(message.getUser()).orElse(""));
+                    existingMessage.setMessage(Optional.ofNullable(message.getMessage()).orElse(""));
+                    return messageRepository.save(existingMessage);
+                });
+    }
 
     @Override
     public List<Message> getMessagesByChatId(Long chatId) {

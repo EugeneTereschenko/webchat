@@ -1,6 +1,8 @@
 package com.example.webchat.controller;
 
 import com.example.webchat.dto.MessageChatDTO;
+import com.example.webchat.dto.MessageResponseDTO;
+import com.example.webchat.dto.UserChatDTO;
 import com.example.webchat.model.Chat;
 import com.example.webchat.model.Message;
 import com.example.webchat.model.User;
@@ -32,8 +34,8 @@ public class ChatController {
 
     @GetMapping("/api/users")
     @ResponseBody
-    public ResponseEntity<List<String>> getUsersForChat(@RequestParam String chatName) {
-        List<String> users = new ArrayList<>();
+    public ResponseEntity<List<UserChatDTO>> getUsersForChat(@RequestParam String chatName) {
+        List<UserChatDTO> users = new ArrayList<>();
         Optional<Chat> chat = chatService.getChatByName(chatName);
         User user = userService.getAuthenticatedUser();
 
@@ -49,9 +51,15 @@ public class ChatController {
                 log.info("User already in chat: " + user.getUsername());
             }
             chatService.updateChat(chat.get());
-            return ResponseEntity.ok(chat.get().getUsers());
+            return ResponseEntity.ok(chat.get().getUsers().stream().map(username -> {
+                UserChatDTO userChatDTO = new UserChatDTO();
+                userChatDTO.setUsername(username);
+                return userChatDTO;
+            }).toList());
         } else {
-            users.add(user.getUsername());
+            UserChatDTO userChatDTO = new UserChatDTO();
+            userChatDTO.setUsername(user.getUsername());
+            users.add(userChatDTO);
             log.info("Chat not found, returning user: " + user.getUsername());
             return ResponseEntity.ok(users);
         }
@@ -71,9 +79,24 @@ public class ChatController {
     }
 
     @GetMapping("/api/chat")
-    public ResponseEntity<List<Message>> getChatMessages(@RequestParam String chatName) {
+    public ResponseEntity<List<MessageResponseDTO>> getChatMessages(@RequestParam String chatName) {
         List<Message> messages = chatService.getChatMessages(chatName);
-        return ResponseEntity.ok(messages);
+        List<MessageResponseDTO> messageResponseDTOs = new ArrayList<>();
+        messageResponseDTOs = messages.stream().map(message -> {
+            MessageResponseDTO messageResponseDTO = new MessageResponseDTO();
+            messageResponseDTO.setUsername(message.getUser());
+            messageResponseDTO.setMessage(message.getMessage());
+            messageResponseDTO.setTime(new Date().toString());
+            messageResponseDTO.setAvatar("https://example.com/avatar.png"); // Placeholder for avatar URL
+            return messageResponseDTO;
+        })
+                .peek(messageResponseDTO -> {
+                    if (messageResponseDTO.getUsername() == null) {
+                        messageResponseDTO.setUsername("Unknown");
+                    }
+                })
+                .toList();
+        return ResponseEntity.ok(messageResponseDTOs);
     }
 
     @PostMapping("/api/chatAdd")

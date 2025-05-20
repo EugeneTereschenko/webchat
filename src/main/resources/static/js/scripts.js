@@ -23,8 +23,10 @@ function getCookie(name) {
 }
 
 function scrollToBottom() {
-    const messageContainer = document.querySelector('.custom-background-message');
-    messageContainer.scrollTop = messageContainer.scrollHeight;
+    const messagesContainer = document.querySelector('#messages-list');
+    if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
 }
 
 function clearPanel() {
@@ -185,13 +187,28 @@ async function fetchChatMessages() {
         }
 
         const data = await response.json();
-        const messagesContainer = document.querySelector('.custom-background-message ul');
+        console.log('Fetched chat messages:', data);
+        const messagesContainer = document.querySelector('#messages-list');
         if (messagesContainer) {
-            messagesContainer.innerHTML = '';
+            //messagesContainer.innerHTML = '';
             data.forEach(message => {
                 const messageElement = document.createElement('li');
-                messageElement.className = 'list-group-item';
-                messageElement.innerHTML = `<p>${message.user}</p><p>${message.message}</p>`;
+                messageElement.className = 'd-flex justify-content-between mb-4';
+                messageElement.innerHTML = `
+                    <img src="${message.avatar || 'https://mdbcdn.b-cdn.net/img/Photos/Avatars/avatar-6.webp'}"
+                         alt="avatar"
+                         class="rounded-circle d-flex align-self-start me-3 shadow-1-strong"
+                         width="60">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between p-3">
+                            <p class="fw-bold mb-0">${message.username || 'Unknown User'}</p>
+                            <p class="text-muted small mb-0"><i class="far fa-clock"></i> ${message.time || 'Just now'}</p>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">${message.message || 'No message available'}</p>
+                        </div>
+                    </div>
+                `;
                 messagesContainer.appendChild(messageElement);
             });
             scrollToBottom();
@@ -263,14 +280,31 @@ async function fetchUsers() {
         const data = await response.json();
         console.log('Fetched user data:', data);
 
-        const usersContainer = document.querySelector('.custom-background-user ul');
+        const usersContainer = document.querySelector('#users-list');
         if (usersContainer) {
-            usersContainer.innerHTML = '';
+            //usersContainer.innerHTML = '';
 
             data.forEach(user => {
                 const userElement = document.createElement('li');
-                userElement.className = 'list-group-item';
-                userElement.innerHTML = `<p>${user}</p>`;
+                userElement.className = 'p-2 border-bottom bg-body-tertiary';
+                userElement.innerHTML = `
+                    <a href="#!" class="d-flex justify-content-between">
+                        <div class="d-flex flex-row">
+                            <img src="${user.avatar || 'https://mdbcdn.b-cdn.net/img/Photos/Avatars/avatar-8.webp'}"
+                                 alt="avatar"
+                                 class="rounded-circle d-flex align-self-center me-3 shadow-1-strong"
+                                 width="60">
+                            <div class="pt-1">
+                                <p class="fw-bold mb-0">${user.username || 'Unknown User'}</p>
+                                <p class="small text-muted">${user.message || 'No message available'}</p>
+                            </div>
+                        </div>
+                        <div class="pt-1">
+                            <p class="small text-muted mb-1">${user.time || 'Just now'}</p>
+                            ${user.unreadCount ? `<span class="badge bg-danger float-end">${user.unreadCount}</span>` : ''}
+                        </div>
+                    </a>
+                `;
                 usersContainer.appendChild(userElement);
             });
         }
@@ -856,8 +890,8 @@ async function addPhoto() {
 
 async function sendChatMessage() {
     const token = localStorage.getItem('authToken');
-    const chatName = document.getElementById('chat-name-value')?.value;
-    if (!chatName) {
+    const chatName = document.getElementById('chat-name-value')?.textContent; // Use textContent to get the span value
+    if (!chatName || chatName.trim() === '') {
         const modal = new bootstrap.Modal(document.getElementById('messageModal'));
         modal.show();
         return;
@@ -868,7 +902,7 @@ async function sendChatMessage() {
     }
 
     const messageChatData = {
-        user: document.getElementById('message-user').value,
+        user: "",
         message: document.getElementById('message-message').value,
         chatName: document.getElementById('chat-name')?.value
     };
@@ -981,7 +1015,7 @@ async function sendChatName(chatNameToOpen) {
         console.log('Chat created successfully:', data);
         document.getElementById('chat-name-value').textContent = chatName;
         fetchUsers();
-        fetchUser();
+        //fetchUser();
         setInterval(fetchChatMessages, 5000);
     } catch (error) {
         console.error('Error creating chat:', error);

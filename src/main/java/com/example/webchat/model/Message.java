@@ -24,6 +24,10 @@ public class Message {
     @JoinColumn(name = "chat_id")
     private Chat chat;
 
+    private Boolean isRead = false;
+
+    private String time;
+
     public Message(String user, String message) {
         this.user = user;
         this.message = message;

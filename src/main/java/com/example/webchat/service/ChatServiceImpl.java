@@ -3,6 +3,7 @@ package com.example.webchat.service;
 import com.example.webchat.dto.MessageChatDTO;
 import com.example.webchat.model.Chat;
 import com.example.webchat.model.Message;
+import com.example.webchat.model.User;
 import com.example.webchat.repository.ChatRepository;
 import com.example.webchat.service.impl.ChatService;
 import com.example.webchat.service.impl.MessageService;
@@ -20,12 +21,25 @@ public class ChatServiceImpl implements ChatService  {
 
     private final ChatRepository chatRepository;
     private final MessageService messageService;
+    private final UserService userService;
 
     public Optional<Chat> updateChat(String chatName) {
 
         Optional<Chat> existingChat = chatRepository.findByChatName(chatName);
         if (existingChat.isPresent()) {
             log.info("Chat already exists: " + chatName);
+            List<Message> messages = messageService.getMessagesByChatId(existingChat.get().getId())
+                    .stream()
+                    .filter(message -> message.getIsRead())
+                    .toList();
+            log.info("Marking messages as unread for chat: " + chatName);
+            log.info("Messages: " + messages.size());
+            messages.forEach(message -> {
+                if (message.getIsRead()) {
+                    message.setIsRead(false);
+                    messageService.updateMessage(message);
+                }
+            });
             return existingChat;
         } else {
             log.info("Creating new chat: " + chatName);
@@ -49,19 +63,35 @@ public class ChatServiceImpl implements ChatService  {
         }
     }
 
+    @Override
     public List<Message> getChatMessages(String chatName) {
         Optional<Chat> chat = chatRepository.findByChatName(chatName);
-        if (chat.isEmpty()){
+        if (chat.isEmpty()) {
             log.info("Chat not found: " + chatName);
             return List.of();
         }
-        return messageService.getMessagesByChatId(chat.get().getId());
+
+        List<Message> messages = messageService.getMessagesByChatId(chat.get().getId())
+                .stream()
+                .filter(message -> !message.getIsRead())
+                .toList();
+
+        // Mark messages as read
+        messages.forEach(message -> {
+            if (!message.getIsRead()) {
+                message.setIsRead(true);
+                messageService.updateMessage(message);
+            }
+        });
+
+        return messages;
     }
 
     public Optional<Message> addChatMessage(MessageChatDTO messageChatDTO) {
+        User user = userService.getAuthenticatedUser();
         Optional<Message> messageToSave = null;
         Message message = new Message();
-        message.setUser(messageChatDTO.getUser());
+        message.setUser(user.getUsername());
         message.setMessage(messageChatDTO.getMessage());
         Optional<Chat> chat = chatRepository.findByChatName(messageChatDTO.getChatName());
 

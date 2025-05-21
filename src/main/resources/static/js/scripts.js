@@ -56,6 +56,27 @@ function clearProfileContent() {
     }
 }
 
+function createMessageElement(avatar, username, time, messageContent) {
+    const messageElement = document.createElement('li');
+    messageElement.className = 'd-flex justify-content-between mb-4';
+    messageElement.innerHTML = `
+        <img src="${avatar || 'https://mdbcdn.b-cdn.net/img/Photos/Avatars/avatar-6.webp'}"
+             alt="avatar"
+             class="rounded-circle d-flex align-self-start me-3 shadow-1-strong"
+             width="60">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between p-3">
+                <p class="fw-bold mb-0">${username || 'Unknown User'}</p>
+                <p class="text-muted small mb-0"><i class="far fa-clock"></i> ${time || 'Just now'}</p>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">${messageContent || 'No message available'}</p>
+            </div>
+        </div>
+    `;
+    return messageElement;
+}
+
 function setProfileElements() {
     const profileContent = document.getElementById('profile-content');
     profileContent.innerHTML = "<section style=\"background-color: #eee;\">" +
@@ -67,6 +88,47 @@ function setProfileElements() {
         "</div>" +
         "</div>" +
         "</section>";
+}
+
+async function fetchAndDisplayOldMessages(chatName) {
+    const token = localStorage.getItem('authToken'); // Retrieve the auth token
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/api/oldMessages?chatName=${encodeURIComponent(chatName)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Include the token in the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch messages: ${response.status}`);
+        }
+
+        const messages = await response.json();
+        const messagesContainer = document.querySelector('#messages-list');
+        console.log('Fetched messages:', messages);
+        if (messagesContainer) {
+            messages.forEach(message => {
+                const messageElement = createMessageElement(
+                    message.avatar,
+                    message.username,
+                    message.time,
+                    message.message
+                );
+                messagesContainer.appendChild(messageElement);
+            });
+        } else {
+            console.error('Messages container not found');
+        }
+    } catch (error) {
+        console.error('Error fetching messages:', error);
+    }
 }
 
 async function checkAuth() {
@@ -192,7 +254,7 @@ async function fetchChatMessages() {
         if (messagesContainer) {
             //messagesContainer.innerHTML = '';
             data.forEach(message => {
-                const messageElement = document.createElement('li');
+                /*const messageElement = document.createElement('li');
                 messageElement.className = 'd-flex justify-content-between mb-4';
                 messageElement.innerHTML = `
                     <img src="${message.avatar || 'https://mdbcdn.b-cdn.net/img/Photos/Avatars/avatar-6.webp'}"
@@ -202,14 +264,14 @@ async function fetchChatMessages() {
                     <div class="card">
                         <div class="card-header d-flex justify-content-between p-3">
                             <p class="fw-bold mb-0">${message.username || 'Unknown User'}</p>
-                            <p class="text-muted small mb-0"><i class="far fa-clock"></i> ${message.time || 'Just now'}</p>
+                            <p class="text-muted small mb-0"><i class="far fa-clock"></i> ${ || 'Just now'}</p>
                         </div>
                         <div class="card-body">
                             <p class="mb-0">${message.message || 'No message available'}</p>
                         </div>
                     </div>
-                `;
-                messagesContainer.appendChild(messageElement);
+                `;*/
+                messagesContainer.appendChild(createMessageElement(message.avatar, message.username, message.time, message.message));
             });
             scrollToBottom();
         } else {
@@ -1015,6 +1077,7 @@ async function sendChatName(chatNameToOpen) {
         console.log('Chat created successfully:', data);
         document.getElementById('chat-name-value').textContent = chatName;
         fetchUsers();
+        fetchAndDisplayOldMessages(chatName);
         //fetchUser();
         setInterval(fetchChatMessages, 5000);
     } catch (error) {

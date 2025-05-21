@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
+import java.util.List;
+
 @Entity
 @Table(name = "\"messages\"")
 @Data
@@ -25,6 +27,9 @@ public class Message {
     private Chat chat;
 
     private Boolean isRead = false;
+
+    @Column(name="usersRead", length = 255)
+    private List<String> usersRead;
 
     private String time;
 

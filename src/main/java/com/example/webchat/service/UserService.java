@@ -322,6 +322,7 @@ public class UserService {
         log.info(userDTO.toString() + " login");
         try {
             String token = authenticateUser(user.getUsername(), userDTO.getPassword());
+            log.info("token: " + token);
             userResponseDTO.setToken(token);
             userResponseDTO.setMessage("User logged in successfully");
             userResponseDTO.setSuccess("true");

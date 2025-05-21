@@ -100,12 +100,15 @@ public class ChatController {
     }
 
     @PostMapping("/api/chatAdd")
-    public ResponseEntity<Message> addChatMessage(@Valid @RequestBody MessageChatDTO messageChatDTO) {
+    public ResponseEntity<MessageChatDTO> addChatMessage(@Valid @RequestBody MessageChatDTO messageChatDTO) {
 
         System.out.println("Received messageDTO: " + messageChatDTO);
 
         Optional<Message> savedMessage = chatService.addChatMessage(messageChatDTO);
-        return ResponseEntity.ok(savedMessage.get());
+        messageChatDTO.setChatName(savedMessage.get().getChat().getChatName());
+        messageChatDTO.setMessage(savedMessage.get().getMessage());
+        messageChatDTO.setUser(savedMessage.get().getUser());
+        return ResponseEntity.ok(messageChatDTO);
     }
 
     @PostMapping("/api/chatCreate")
@@ -115,6 +118,20 @@ public class ChatController {
         if (chat.isPresent()) {
             activityService.addActivity("Create Chat", user.getUserID(), new Date());
             return ResponseEntity.ok(chat.get());
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");
+        }
+    }
+
+
+    @GetMapping("/api/oldMessages")
+    public ResponseEntity<?> loadOldMessages(@RequestParam String chatName) {
+        User user = userService.getAuthenticatedUser();
+        Optional<Chat> chat = chatService.updateChat(chatName);
+        if (chat.isPresent()) {
+            activityService.addActivity("Create Chat", user.getUserID(), new Date());
+            List<MessageChatDTO> messageChatDTOS = chatService.getOldChatMessages(chat.get().getChatName());
+            return ResponseEntity.ok(messageChatDTOS);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");
         }

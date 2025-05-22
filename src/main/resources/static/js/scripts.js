@@ -219,14 +219,25 @@ async function updateNotification(notification) {
 
 async function checkNewMessages() {
     const token = localStorage.getItem('authToken'); // Retrieve the auth token
+    var chatName = document.getElementById('chat-name')?.value;
+    const chatNameFromChat = document.getElementById('chat-name-value')?.textContent;
 
     if (!token) {
         console.error('No auth token found');
         return;
     }
 
+    if (chatNameFromChat) {
+        chatName = chatNameFromChat; // Use the chat name from the chat element
+    }
+
+    if (!chatName) {
+        console.error('Chat name is required');
+        return;
+    }
+
     try {
-        const response = await fetch('/chat/api/newMessages', {
+        const response = await fetch(`/chat/api/newMessages?chatName=${encodeURIComponent(chatName)}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}` // Include the token in the Authorization header

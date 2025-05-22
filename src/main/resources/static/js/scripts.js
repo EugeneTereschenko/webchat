@@ -217,6 +217,38 @@ async function updateNotification(notification) {
     }
 }
 
+async function checkNewMessages() {
+    const token = localStorage.getItem('authToken'); // Retrieve the auth token
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/api/newMessages', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Include the token in the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to check new messages: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('New messages:', data);
+        if (data) {
+            fetchChatMessages();
+        } else {
+            console.log('No new messages');
+        }
+    } catch (error) {
+        console.error('Error checking new messages:', error);
+    }
+}
+
 async function fetchChatMessages() {
     const token = localStorage.getItem('authToken'); // Retrieve the auth token
     var chatName = document.getElementById('chat-name')?.value;
@@ -237,7 +269,7 @@ async function fetchChatMessages() {
     }
 
     try {
-        const response = await fetch(`/chat/api/chat?chatName=${encodeURIComponent(chatName)}`, {
+        const response = await fetch(`/chat/api/newMessages?chatName=${encodeURIComponent(chatName)}`, {
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer ' + token
@@ -254,23 +286,6 @@ async function fetchChatMessages() {
         if (messagesContainer) {
             //messagesContainer.innerHTML = '';
             data.forEach(message => {
-                /*const messageElement = document.createElement('li');
-                messageElement.className = 'd-flex justify-content-between mb-4';
-                messageElement.innerHTML = `
-                    <img src="${message.avatar || 'https://mdbcdn.b-cdn.net/img/Photos/Avatars/avatar-6.webp'}"
-                         alt="avatar"
-                         class="rounded-circle d-flex align-self-start me-3 shadow-1-strong"
-                         width="60">
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between p-3">
-                            <p class="fw-bold mb-0">${message.username || 'Unknown User'}</p>
-                            <p class="text-muted small mb-0"><i class="far fa-clock"></i> ${ || 'Just now'}</p>
-                        </div>
-                        <div class="card-body">
-                            <p class="mb-0">${message.message || 'No message available'}</p>
-                        </div>
-                    </div>
-                `;*/
                 messagesContainer.appendChild(createMessageElement(message.avatar, message.username, message.time, message.message));
             });
             scrollToBottom();
@@ -281,40 +296,6 @@ async function fetchChatMessages() {
         console.log('Fetched chat messages:', data);
     } catch (error) {
         console.error('Error fetching chat messages:', error);
-    }
-}
-
-
-async function fetchUser() {
-    const token = localStorage.getItem('authToken');
-    const chatName = document.getElementById('chat-name')?.value;
-
-    if (!token) {
-        console.error('No auth token found');
-        return;
-    }
-
-    try {
-        const response = await fetch(`/chat/api/user?chatName=${encodeURIComponent(chatName)}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + token
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch user data: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Fetched user data:', data);
-
-        const userMessageElement = document.querySelector('#message-user');
-        if (userMessageElement) {
-            userMessageElement.value = data.username;
-        }
-    } catch (error) {
-        console.error('Error fetching user data:', error);
     }
 }
 
@@ -1078,8 +1059,7 @@ async function sendChatName(chatNameToOpen) {
         document.getElementById('chat-name-value').textContent = chatName;
         fetchUsers();
         fetchAndDisplayOldMessages(chatName);
-        //fetchUser();
-        setInterval(fetchChatMessages, 5000);
+        setInterval(checkNewMessages, 5000);
     } catch (error) {
         console.error('Error creating chat:', error);
     }

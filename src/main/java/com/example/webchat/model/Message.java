@@ -31,6 +31,10 @@ public class Message {
     @Column(name="usersRead", length = 255)
     private List<String> usersRead;
 
+    @Column(name = "\"usersToken\"", length = 255)
+    private List<String> usersToken;
+
+    @Column(name = "\"time\"")
     private String time;
 
     public Message(String user, String message) {

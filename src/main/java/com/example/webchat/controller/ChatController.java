@@ -6,7 +6,6 @@ import com.example.webchat.dto.UserChatDTO;
 import com.example.webchat.model.Chat;
 import com.example.webchat.model.Message;
 import com.example.webchat.model.User;
-import com.example.webchat.service.ImageService;
 import com.example.webchat.service.UserService;
 import com.example.webchat.service.impl.ActivityService;
 import com.example.webchat.service.impl.ChatService;
@@ -15,10 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.validation.Valid;
 import java.util.*;
@@ -30,112 +26,62 @@ public class ChatController {
 
     private final UserService userService;
     private final ChatService chatService;
-    private final ActivityService activityService;
 
     @GetMapping("/api/users")
     @ResponseBody
     public ResponseEntity<List<UserChatDTO>> getUsersForChat(@RequestParam String chatName) {
-        List<UserChatDTO> users = new ArrayList<>();
-        Optional<Chat> chat = chatService.getChatByName(chatName);
-        User user = userService.getAuthenticatedUser();
-
-        if (chat.isPresent()) {
-            if (chat.get().getUsers() == null) {
-                chat.get().setUsers(new ArrayList<>()); // Initialize the users list if null
-            }
-
-            if (!chat.get().getUsers().contains(user.getUsername())) {
-                chat.get().getUsers().add(user.getUsername());
-                log.info("User added to chat: " + user.getUsername() + " to chat: " + chatName);
-            } else {
-                log.info("User already in chat: " + user.getUsername());
-            }
-            chatService.updateChat(chat.get());
-            return ResponseEntity.ok(chat.get().getUsers().stream().map(username -> {
-                UserChatDTO userChatDTO = new UserChatDTO();
-                userChatDTO.setUsername(username);
-                return userChatDTO;
-            }).toList());
-        } else {
-            UserChatDTO userChatDTO = new UserChatDTO();
-            userChatDTO.setUsername(user.getUsername());
-            users.add(userChatDTO);
-            log.info("Chat not found, returning user: " + user.getUsername());
-            return ResponseEntity.ok(users);
+        List<UserChatDTO> userChatDTOS = chatService.getUsersForChat(chatName);
+        if (userChatDTOS.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(userChatDTOS);
         }
-    }
-
-
-    @GetMapping("/api/user")
-    @ResponseBody
-    public ResponseEntity<HashMap<String, String>> getUserForChat(@RequestParam String chatName) {
-        User user = userService.getAuthenticatedUser();
-        log.info("User connected to chat: " + user.getUsername());
-
-        HashMap<String, String> response = new HashMap<>();
-        response.put("username", user.getUsername());
-        response.put("success", "true");
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/api/chat")
-    public ResponseEntity<List<MessageResponseDTO>> getChatMessages(@RequestParam String chatName) {
-        List<Message> messages = chatService.getChatMessages(chatName);
-        List<MessageResponseDTO> messageResponseDTOs = new ArrayList<>();
-        messageResponseDTOs = messages.stream().map(message -> {
-            MessageResponseDTO messageResponseDTO = new MessageResponseDTO();
-            messageResponseDTO.setUsername(message.getUser());
-            messageResponseDTO.setMessage(message.getMessage());
-            messageResponseDTO.setTime(new Date().toString());
-            messageResponseDTO.setAvatar("https://example.com/avatar.png"); // Placeholder for avatar URL
-            return messageResponseDTO;
-        })
-                .peek(messageResponseDTO -> {
-                    if (messageResponseDTO.getUsername() == null) {
-                        messageResponseDTO.setUsername("Unknown");
-                    }
-                })
-                .toList();
-        return ResponseEntity.ok(messageResponseDTOs);
+        return ResponseEntity.ok(userChatDTOS);
     }
 
     @PostMapping("/api/chatAdd")
-    public ResponseEntity<MessageChatDTO> addChatMessage(@Valid @RequestBody MessageChatDTO messageChatDTO) {
-
-        System.out.println("Received messageDTO: " + messageChatDTO);
-
-        Optional<Message> savedMessage = chatService.addChatMessage(messageChatDTO);
-        messageChatDTO.setChatName(savedMessage.get().getChat().getChatName());
-        messageChatDTO.setMessage(savedMessage.get().getMessage());
-        messageChatDTO.setUser(savedMessage.get().getUser());
-        return ResponseEntity.ok(messageChatDTO);
+    public ResponseEntity<?> addChatMessage(@Valid @RequestBody MessageChatDTO messageChatDTO) {
+        Optional<MessageChatDTO> savedMessage = chatService.addChatMessage(messageChatDTO);
+        if (savedMessage.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");
+        }
+        return ResponseEntity.ok(savedMessage.get());
     }
 
     @PostMapping("/api/chatCreate")
     public ResponseEntity<?> createChat(@RequestParam String name) {
-        User user = userService.getAuthenticatedUser();
-        Optional<Chat> chat = chatService.updateChat(name);
+        Optional<Chat> chat = chatService.createOrCheckChat(name);
         if (chat.isPresent()) {
-            activityService.addActivity("Create Chat", user.getUserID(), new Date());
             return ResponseEntity.ok(chat.get());
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");
         }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");
     }
-
 
     @GetMapping("/api/oldMessages")
-    public ResponseEntity<?> loadOldMessages(@RequestParam String chatName) {
-        User user = userService.getAuthenticatedUser();
-        Optional<Chat> chat = chatService.updateChat(chatName);
-        if (chat.isPresent()) {
-            activityService.addActivity("Create Chat", user.getUserID(), new Date());
-            List<MessageChatDTO> messageChatDTOS = chatService.getOldChatMessages(chat.get().getChatName());
+    public ResponseEntity<?> loadOldMessages(@RequestParam String chatName, @RequestHeader("Authorization") String token) {
+        List<MessageChatDTO> messageChatDTOS = chatService.getOldChatMessages(chatName, token);
+        if (!messageChatDTOS.isEmpty()) {
             return ResponseEntity.ok(messageChatDTOS);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");
         }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");
     }
+
+    @GetMapping("/api/newMessages")
+    public ResponseEntity<?> loadNewMessages(@RequestParam String chatName, @RequestHeader("Authorization") String token) {
+        List<MessageResponseDTO> messageResponseDTOs = chatService.getNewChatMessages(chatName, token);
+        if (!messageResponseDTOs.isEmpty()) {
+            return ResponseEntity.ok(messageResponseDTOs);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");
+    }
+
+    @GetMapping("/api/checkMessages")
+    public  ResponseEntity<?> checkMessages(@RequestParam String chatName, @RequestHeader("Authorization") String token) {
+        Boolean messages = chatService.checkNewMessages(chatName, token);
+        if (messages != null) {
+            return ResponseEntity.ok(messages);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");
+    }
+
 
 
 }

@@ -322,6 +322,7 @@ public class UserService {
         log.info(userDTO.toString() + " login");
         try {
             String token = authenticateUser(user.getUsername(), userDTO.getPassword());
+            log.info("token: " + token);
             userResponseDTO.setToken(token);
             userResponseDTO.setMessage("User logged in successfully");
             userResponseDTO.setSuccess("true");
@@ -353,5 +354,13 @@ public class UserService {
             log.info("Failed to check authentication: " + e.getMessage());
         }
         return userResponseDTO;
+    }
+
+    public Long getUserIdByUserName(String name) {
+        User user = userRepository.findByUsername(name);
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found");
+        }
+        return user.getUserID();
     }
 }

@@ -24,11 +24,9 @@
     background-color: lightblue;
 }
 
-.custom-background-message {
-    background-color: lightblue;
-    height: 450px;
-    width: 60%;
-    overflow-y: auto;
+#messages-list {
+    max-height: 450px; /* Set a fixed height */
+    overflow-y: auto; /* Enable vertical scrolling */
 }
 
 .custom-background-two-message {

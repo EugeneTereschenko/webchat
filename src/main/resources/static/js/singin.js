@@ -55,7 +55,6 @@ async function handleLoginSuccess(data) {
         if (!response.ok) {
             throw new Error('Failed to load resource: ' + response.status);
         }
-
         const htmlData = await response.text(); // Expecting HTML response
         document.open();
         document.write(htmlData);

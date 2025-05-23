@@ -1,7 +1,5 @@
 let n = 1; // Current page number
-//let currentPageUser = 1; // Initialize current page variable
-//let currentPageMessage = 1; // Initialize current page variable
-//let currentPageChat = 1; // Initialize current page variable
+let isAvatarLeft = false; // Flag to alternate avatar positions
 
 
 function setCookie(name, value, days) {
@@ -23,8 +21,10 @@ function getCookie(name) {
 }
 
 function scrollToBottom() {
-    const messageContainer = document.querySelector('.custom-background-message');
-    messageContainer.scrollTop = messageContainer.scrollHeight;
+    const messagesContainer = document.querySelector('#messages-list');
+    if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
 }
 
 function clearPanel() {
@@ -54,6 +54,98 @@ function clearProfileContent() {
     }
 }
 
+function createMessageElement(id, avatar, username, time, messageContent, isRead) {
+    const messageElement = document.createElement('li');
+    messageElement.className = 'd-flex justify-content-between mb-4';
+    messageElement.id = id; // Set the ID for the message element
+
+    // Add a mouseover event listener
+    messageElement.addEventListener('mouseover', () => {
+        console.log(`Mouse is over message with ID: ${id}`);
+        messageElement.style.backgroundColor = '#f0f0f0'; // Change background color
+        makeFaCheckDouble(messageElement); // Call the function with the message element
+        sendMarkAsReadMessages(id); // Call the function to mark as read
+    });
+
+    // Add a mouseout event listener to reset the style
+    messageElement.addEventListener('mouseout', () => {
+        messageElement.style.backgroundColor = ''; // Reset background color
+    });
+
+    messageElement.innerHTML = `
+        <img src="data:image/png;base64,${avatar || 'https://mdbcdn.b-cdn.net/img/Photos/Avatars/avatar-6.webp'}"
+             alt="avatar"
+             class="rounded-circle d-flex align-self-start me-3 shadow-1-strong"
+             width="60">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between p-3">
+                <p class="fw-bold mb-0">${username || 'Unknown User'}</p>
+                <p class="text-muted small mb-0"><i class="far fa-clock"></i> ${time || 'Just now'}</p>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">${messageContent || 'No message available'}</p>
+                <span class="text-muted float-end"><i class="fas fa-check" aria-hidden="true" id="check-view"></i></span>
+            </div>
+        </div>
+    `;
+
+        if (isRead) {
+            makeFaCheckDouble(messageElement); // Call the function with the message element
+        }
+
+    return messageElement;
+}
+
+function createMessageElementAvatarRight(id, avatar, username, time, messageContent, isRead) {
+    const messageElement = document.createElement('li');
+    messageElement.className = 'd-flex justify-content-between mb-4';
+    messageElement.id = id; // Set the ID for the message element
+    // Add a mouseover event listener
+    messageElement.addEventListener('mouseover', () => {
+        console.log(`Mouse is over message with ID: ${id}`);
+        messageElement.style.backgroundColor = '#f0f0f0'; // Change background color
+        makeFaCheckDouble(messageElement); // Call the function with the message element
+        sendMarkAsReadMessages(id);
+    });
+
+    // Add a mouseout event listener to reset the style
+    messageElement.addEventListener('mouseout', () => {
+        messageElement.style.backgroundColor = ''; // Reset background color
+    });
+
+    messageElement.innerHTML = `
+        <div class="card w-100">
+            <div class="card-header d-flex justify-content-between p-3">
+                <p class="fw-bold mb-0">${username || 'Unknown User'}</p>
+                <p class="text-muted small mb-0"><i class="far fa-clock"></i> ${time || 'Just now'}</p>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">${messageContent || 'No message available'}</p>
+                <span class="text-muted float-end"><i class="fas fa-check" aria-hidden="true" id="check-view"></i></span>
+            </div>
+        </div>
+        <img src="data:image/png;base64,${avatar || 'https://mdbcdn.b-cdn.net/img/Photos/Avatars/avatar-5.webp'}"
+             alt="avatar"
+             class="rounded-circle d-flex align-self-start ms-3 shadow-1-strong"
+             width="60">
+    `;
+
+    if (isRead) {
+        makeFaCheckDouble(messageElement); // Call the function with the message element
+    }
+    return messageElement;
+}
+
+function makeFaCheckDouble(messageElement) {
+    const checkView = messageElement.querySelector('#check-view'); // Scoped to messageElement
+    if (checkView) {
+        checkView.className = 'fas fa-check-double'; // Update the class to 'fas fa-check-double'
+        checkView.id = 'check-view'; // Optionally remove the id if it's no longer needed
+    } else {
+        console.error('Element with id "check-view" not found within the message element.');
+    }
+}
+
 function setProfileElements() {
     const profileContent = document.getElementById('profile-content');
     profileContent.innerHTML = "<section style=\"background-color: #eee;\">" +
@@ -65,6 +157,75 @@ function setProfileElements() {
         "</div>" +
         "</div>" +
         "</section>";
+}
+
+
+async function sendMarkAsReadMessages(idElement) {
+
+    const token = localStorage.getItem('authToken'); // Retrieve the auth token
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/api/readMessage?id=${encodeURIComponent(idElement)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Include the token in the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to mark messages as read: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Marked messages as read:', data);
+    } catch (error) {
+        console.error('Error marking messages as read:', error);
+    }
+}
+
+async function fetchAndDisplayOldMessages(chatName) {
+    const token = localStorage.getItem('authToken'); // Retrieve the auth token
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/api/oldMessages?chatName=${encodeURIComponent(chatName)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Include the token in the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch messages: ${response.status}`);
+        }
+
+        const messages = await response.json();
+        const messagesContainer = document.querySelector('#messages-list');
+        console.log('Fetched messages:', messages);
+        if (messagesContainer) {
+            messages.forEach(message => {
+                const messageElement = isAvatarLeft
+                    ? createMessageElement(message.id, message.avatar, message.username, message.time, message.message, message.isRead)
+                    : createMessageElementAvatarRight(message.id, message.avatar, message.username, message.time, message.message, message.isRead);
+
+                messagesContainer.appendChild(messageElement);
+                isAvatarLeft = !isAvatarLeft; // Toggle avatar position
+            });
+        } else {
+            console.error('Messages container not found');
+        }
+    } catch (error) {
+        console.error('Error fetching messages:', error);
+    }
 }
 
 async function checkAuth() {
@@ -153,6 +314,49 @@ async function updateNotification(notification) {
     }
 }
 
+async function checkNewMessages() {
+    const token = localStorage.getItem('authToken'); // Retrieve the auth token
+    var chatName = document.getElementById('chat-name')?.value;
+    const chatNameFromChat = document.getElementById('chat-name-value')?.textContent;
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    if (chatNameFromChat) {
+        chatName = chatNameFromChat; // Use the chat name from the chat element
+    }
+
+    if (!chatName) {
+        console.error('Chat name is required');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/api/checkMessages?chatName=${encodeURIComponent(chatName)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Include the token in the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to check new messages: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data) {
+            console.log('New messages:', data);
+            fetchChatMessages();
+        } else {
+            //console.log('No new messages');
+        }
+    } catch (error) {
+        console.error('Error checking new messages:', error);
+    }
+}
+
 async function fetchChatMessages() {
     const token = localStorage.getItem('authToken'); // Retrieve the auth token
     var chatName = document.getElementById('chat-name')?.value;
@@ -173,7 +377,7 @@ async function fetchChatMessages() {
     }
 
     try {
-        const response = await fetch(`/chat/api/chat?chatName=${encodeURIComponent(chatName)}`, {
+        const response = await fetch(`/chat/api/newMessages?chatName=${encodeURIComponent(chatName)}`, {
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer ' + token
@@ -185,14 +389,17 @@ async function fetchChatMessages() {
         }
 
         const data = await response.json();
-        const messagesContainer = document.querySelector('.custom-background-message ul');
+        console.log('Fetched chat messages:', data);
+        const messagesContainer = document.querySelector('#messages-list');
         if (messagesContainer) {
-            messagesContainer.innerHTML = '';
+            //messagesContainer.innerHTML = '';
             data.forEach(message => {
-                const messageElement = document.createElement('li');
-                messageElement.className = 'list-group-item';
-                messageElement.innerHTML = `<p>${message.user}</p><p>${message.message}</p>`;
+                const messageElement = isAvatarLeft
+                    ? createMessageElement(message.id, message.avatar, message.username, message.time, message.message)
+                    : createMessageElementAvatarRight(message.id, message.avatar, message.username, message.time, message.message);
+
                 messagesContainer.appendChild(messageElement);
+                isAvatarLeft = !isAvatarLeft; // Toggle avatar position
             });
             scrollToBottom();
         } else {
@@ -202,40 +409,6 @@ async function fetchChatMessages() {
         console.log('Fetched chat messages:', data);
     } catch (error) {
         console.error('Error fetching chat messages:', error);
-    }
-}
-
-
-async function fetchUser() {
-    const token = localStorage.getItem('authToken');
-    const chatName = document.getElementById('chat-name')?.value;
-
-    if (!token) {
-        console.error('No auth token found');
-        return;
-    }
-
-    try {
-        const response = await fetch(`/chat/api/user?chatName=${encodeURIComponent(chatName)}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + token
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch user data: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Fetched user data:', data);
-
-        const userMessageElement = document.querySelector('#message-user');
-        if (userMessageElement) {
-            userMessageElement.value = data.username;
-        }
-    } catch (error) {
-        console.error('Error fetching user data:', error);
     }
 }
 
@@ -263,14 +436,31 @@ async function fetchUsers() {
         const data = await response.json();
         console.log('Fetched user data:', data);
 
-        const usersContainer = document.querySelector('.custom-background-user ul');
+        const usersContainer = document.querySelector('#users-list');
         if (usersContainer) {
-            usersContainer.innerHTML = '';
+            //usersContainer.innerHTML = '';
 
             data.forEach(user => {
                 const userElement = document.createElement('li');
-                userElement.className = 'list-group-item';
-                userElement.innerHTML = `<p>${user}</p>`;
+                userElement.className = 'p-2 border-bottom bg-body-tertiary';
+                userElement.innerHTML = `
+                    <a href="#!" class="d-flex justify-content-between">
+                        <div class="d-flex flex-row">
+                            <img src="${user.avatar || 'https://mdbcdn.b-cdn.net/img/Photos/Avatars/avatar-8.webp'}"
+                                 alt="avatar"
+                                 class="rounded-circle d-flex align-self-center me-3 shadow-1-strong"
+                                 width="60">
+                            <div class="pt-1">
+                                <p class="fw-bold mb-0">${user.username || 'Unknown User'}</p>
+                                <p class="small text-muted">${user.message || 'No message available'}</p>
+                            </div>
+                        </div>
+                        <div class="pt-1">
+                            <p class="small text-muted mb-1">${user.time || 'Just now'}</p>
+                            ${user.unreadCount ? `<span class="badge bg-danger float-end">${user.unreadCount}</span>` : ''}
+                        </div>
+                    </a>
+                `;
                 usersContainer.appendChild(userElement);
             });
         }
@@ -856,8 +1046,8 @@ async function addPhoto() {
 
 async function sendChatMessage() {
     const token = localStorage.getItem('authToken');
-    const chatName = document.getElementById('chat-name-value')?.value;
-    if (!chatName) {
+    const chatName = document.getElementById('chat-name-value')?.textContent; // Use textContent to get the span value
+    if (!chatName || chatName.trim() === '') {
         const modal = new bootstrap.Modal(document.getElementById('messageModal'));
         modal.show();
         return;
@@ -868,7 +1058,7 @@ async function sendChatMessage() {
     }
 
     const messageChatData = {
-        user: document.getElementById('message-user').value,
+        user: "",
         message: document.getElementById('message-message').value,
         chatName: document.getElementById('chat-name')?.value
     };
@@ -981,8 +1171,8 @@ async function sendChatName(chatNameToOpen) {
         console.log('Chat created successfully:', data);
         document.getElementById('chat-name-value').textContent = chatName;
         fetchUsers();
-        fetchUser();
-        setInterval(fetchChatMessages, 5000);
+        fetchAndDisplayOldMessages(chatName);
+        setInterval(checkNewMessages, 5000);
     } catch (error) {
         console.error('Error creating chat:', error);
     }

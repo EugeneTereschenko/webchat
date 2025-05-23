@@ -10,5 +10,6 @@ import java.util.Optional;
 public interface MessageService {
     Optional<Message> getMessageById(Long id);
     Optional<Message> saveMessage(Chat chat, Message message);
+    Optional<Message> updateMessage(Message message);
     List<Message> getMessagesByChatId(Long chatId);
 }

@@ -6,6 +6,7 @@ import com.example.webchat.dto.UserChatDTO;
 import com.example.webchat.model.Chat;
 import com.example.webchat.model.Message;
 import com.example.webchat.model.User;
+import com.example.webchat.service.MessageServiceImpl;
 import com.example.webchat.service.UserService;
 import com.example.webchat.service.impl.ActivityService;
 import com.example.webchat.service.impl.ChatService;
@@ -26,6 +27,7 @@ public class ChatController {
 
     private final UserService userService;
     private final ChatService chatService;
+    private final MessageServiceImpl messageService;
 
     @GetMapping("/api/users")
     @ResponseBody
@@ -57,9 +59,14 @@ public class ChatController {
 
     @GetMapping("/api/oldMessages")
     public ResponseEntity<?> loadOldMessages(@RequestParam String chatName, @RequestHeader("Authorization") String token) {
-        List<MessageChatDTO> messageChatDTOS = chatService.getOldChatMessages(chatName, token);
-        if (!messageChatDTOS.isEmpty()) {
-            return ResponseEntity.ok(messageChatDTOS);
+        List<MessageResponseDTO> messageResponseDTOS = chatService.getOldChatMessages(chatName, token);
+        if (!messageResponseDTOS.isEmpty()) {
+            messageResponseDTOS.stream()
+                    .forEach(messageResponseDTO -> {
+                        log.info(messageResponseDTO.toString());
+                    });
+
+            return ResponseEntity.ok(messageResponseDTOS);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");
     }
@@ -68,6 +75,11 @@ public class ChatController {
     public ResponseEntity<?> loadNewMessages(@RequestParam String chatName, @RequestHeader("Authorization") String token) {
         List<MessageResponseDTO> messageResponseDTOs = chatService.getNewChatMessages(chatName, token);
         if (!messageResponseDTOs.isEmpty()) {
+            messageResponseDTOs.stream()
+                    .forEach(messageResponseDTO -> {
+                        log.info(messageResponseDTO.toString());
+                    });
+
             return ResponseEntity.ok(messageResponseDTOs);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");
@@ -79,7 +91,14 @@ public class ChatController {
         if (messages != null) {
             return ResponseEntity.ok(messages);
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");
+        return ResponseEntity.status(HttpStatus.OK).body("Messages not found");
+    }
+
+    @GetMapping("/api/readMessage")
+    public ResponseEntity<?> readMessage(@RequestParam String id, @RequestHeader("Authorization") String token) {
+        log.info(" Read message with id: " + id);
+        messageService.markMessageAsRead(id);
+        return ResponseEntity.status(HttpStatus.OK).body("Message marked as read");
     }
 
 

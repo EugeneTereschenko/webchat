@@ -355,4 +355,12 @@ public class UserService {
         }
         return userResponseDTO;
     }
+
+    public Long getUserIdByUserName(String name) {
+        User user = userRepository.findByUsername(name);
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found");
+        }
+        return user.getUserID();
+    }
 }

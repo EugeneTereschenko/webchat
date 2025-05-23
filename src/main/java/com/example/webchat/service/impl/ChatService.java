@@ -14,7 +14,7 @@ public interface ChatService {
     public Optional<Chat> updateChat(Chat chat);
     public List<MessageResponseDTO> getNewChatMessages(String chatName, String token);
     public List<MessageResponseDTO> getChatMessages(String chatName);
-    public List<MessageChatDTO> getOldChatMessages(String chatName, String token);
+    public List<MessageResponseDTO> getOldChatMessages(String chatName, String token);
     public Optional<MessageChatDTO> addChatMessage(MessageChatDTO messageChatDTO);
     public Optional<Chat> getChatByName(String chatName);
     public List<UserChatDTO> getUsersForChat(String chatName);

@@ -4,12 +4,15 @@ import com.example.webchat.dto.MessageChatDTO;
 import com.example.webchat.dto.MessageResponseDTO;
 import com.example.webchat.dto.UserChatDTO;
 import com.example.webchat.model.Chat;
+import com.example.webchat.model.Image;
 import com.example.webchat.model.Message;
 import com.example.webchat.model.User;
 import com.example.webchat.repository.ChatRepository;
 import com.example.webchat.service.impl.ActivityService;
 import com.example.webchat.service.impl.ChatService;
 import com.example.webchat.service.impl.MessageService;
+import com.example.webchat.util.DateTimeConverter;
+import com.example.webchat.util.TimeAgoFormatter;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,6 +31,7 @@ public class ChatServiceImpl implements ChatService  {
     private final MessageService messageService;
     private final UserService userService;
     private final ActivityService activityService;
+    private final ImageService imageService;
 
     public Optional<Chat> createOrCheckChat(String chatName) {
         User user = userService.getAuthenticatedUser();
@@ -60,6 +64,7 @@ public class ChatServiceImpl implements ChatService  {
 
     @Override
     public List<MessageResponseDTO> getNewChatMessages(String chatName, String token){
+        User user = userService.getAuthenticatedUser();
         String userToken = splitToken(token);
         Optional<Chat> chat = chatRepository.findByChatName(chatName);
         if (chat.isEmpty()) {
@@ -87,12 +92,28 @@ public class ChatServiceImpl implements ChatService  {
             messageService.updateMessage(message);
         });
 
+
+
         return messages.stream().map(message -> {
-                    MessageResponseDTO messageResponseDTO = new MessageResponseDTO();
-                    messageResponseDTO.setUsername(message.getUser());
-                    messageResponseDTO.setMessage(message.getMessage());
-                    messageResponseDTO.setTime(new Date().toString());
-                    messageResponseDTO.setAvatar("https://example.com/avatar.png"); // Placeholder for avatar URL
+
+                    byte[] imageData = new byte[0]; // Placeholder for avatar URL
+                    Optional<Image> optionalImage = imageService.getImageByUserName(message.getUser());
+                    if (optionalImage.isPresent()) {
+                        imageData = optionalImage.get().getData();
+                    } else {
+                        log.warn("No image found for user ID: " + user.getUserID());
+                        imageData = new byte[0]; // Provide a default or empty byte array
+                    }
+
+                    MessageResponseDTO messageResponseDTO = new MessageResponseDTO.Builder()
+                            .id(message.getId())
+                            .username(message.getUser())
+                            .message(message.getMessage())
+                            .time(TimeAgoFormatter.timeAgo(DateTimeConverter.toLocalDateTime(message.getTime())))
+                            .isRead(message.getIsRead())
+                            .avatar(imageData)
+                            .build();
+
                     return messageResponseDTO;
                 })
                 .peek(messageResponseDTO -> {
@@ -133,11 +154,24 @@ public class ChatServiceImpl implements ChatService  {
         });
 
         return messages.stream().map(message -> {
-                    MessageResponseDTO messageResponseDTO = new MessageResponseDTO();
-                    messageResponseDTO.setUsername(message.getUser());
-                    messageResponseDTO.setMessage(message.getMessage());
-                    messageResponseDTO.setTime(new Date().toString());
-                    messageResponseDTO.setAvatar("https://example.com/avatar.png"); // Placeholder for avatar URL
+
+                    byte[] imageData = new byte[0]; // Placeholder for avatar URL
+                    Optional<Image> optionalImage = imageService.getImageByUserName(message.getUser());
+                    if (optionalImage.isPresent()) {
+                        imageData = optionalImage.get().getData();
+                    } else {
+                        log.warn("No image found for user ID: " + user.getUserID());
+                        imageData = new byte[0]; // Provide a default or empty byte array
+                    }
+
+                    MessageResponseDTO messageResponseDTO = new MessageResponseDTO.Builder()
+                            .id(message.getId())
+                            .username(message.getUser())
+                            .message(message.getMessage())
+                            .time(TimeAgoFormatter.timeAgo(DateTimeConverter.toLocalDateTime(message.getTime())))
+                            .isRead(message.getIsRead())
+                            .avatar(imageData)
+                            .build();
                     return messageResponseDTO;
                 })
                 .peek(messageResponseDTO -> {
@@ -147,23 +181,23 @@ public class ChatServiceImpl implements ChatService  {
                 })
                 .toList();
 
-        //return messages;
     }
 
     @Override
-    public List<MessageChatDTO> getOldChatMessages(String chatName, String token) {
+    public List<MessageResponseDTO> getOldChatMessages(String chatName, String token) {
         String userToken = splitToken(token);
+        User user = userService.getAuthenticatedUser();
         Optional<Chat> chat = chatRepository.findByChatName(chatName);
         if (chat.isEmpty()) {
-            log.info("Chat not found: " + chatName);
+            log.debug("Chat not found: " + chatName);
             return List.of();
         }
-        log.info("get old chat messages:");
-        log.info("getOldChatMessages chatName: " + chatName);
-        log.info("getOldChatMessages chatId: " + chat.get().getId());
+        log.debug("get old chat messages:");
+        log.debug("getOldChatMessages chatName: " + chatName);
+        log.debug("getOldChatMessages chatId: " + chat.get().getId());
 
 
-        List<MessageChatDTO> messages = messageService.getMessagesByChatId(chat.get().getId())
+        List<MessageResponseDTO> messages = messageService.getMessagesByChatId(chat.get().getId())
                 .stream()
                 .filter(message -> {
                     if (message.getUsersToken() == null) {
@@ -172,42 +206,61 @@ public class ChatServiceImpl implements ChatService  {
                     return message.getUsersToken().contains(userToken);
                 })
                 .map(message -> {
-                    MessageChatDTO messageChatDTO = new MessageChatDTO();
-                    messageChatDTO.setId(message.getId());
-                    messageChatDTO.setMessage(message.getMessage());
-                    messageChatDTO.setUser(message.getUser());
-                    return messageChatDTO;
+
+                    byte[] imageData = new byte[0]; // Placeholder for avatar URL
+                    Optional<Image> optionalImage = imageService.getImageByUserName(message.getUser());
+                    if (optionalImage.isPresent()) {
+                        imageData = optionalImage.get().getData();
+                    } else {
+                        log.warn("No image found for user ID: " + user.getUserID());
+                        imageData = new byte[0]; // Provide a default or empty byte array
+                    }
+
+                    MessageResponseDTO messageResponseDTO = new MessageResponseDTO.Builder()
+                            .id(message.getId())
+                            .message(message.getMessage())
+                            .username(message.getUser())
+                            .time(TimeAgoFormatter.timeAgo(DateTimeConverter.toLocalDateTime(message.getTime())))
+                            .isRead(message.getIsRead())
+                            .avatar(imageData)
+                            .build();
+
+                    return messageResponseDTO;
                 })
                 .toList();
-        log.info("messages found");
-        log.info("getOldChatMessages messages: " + messages.size());
+        log.debug("messages found");
+        log.debug("getOldChatMessages messages: " + messages.size());
 
         return messages;
     }
 
     public Optional<MessageChatDTO> addChatMessage(MessageChatDTO messageChatDTO) {
         User user = userService.getAuthenticatedUser();
-        Optional<Message> messageToSave = null;
-        MessageChatDTO messageChatDTOToSave = new MessageChatDTO();
-        Message message = new Message();
-        message.setUser(user.getUsername());
-        message.setMessage(messageChatDTO.getMessage());
+        Message message = new Message.Builder()
+              //  .id(messageChatDTO.getId())
+                .user(user.getUsername())
+                .message(messageChatDTO.getMessage())
+                .usersToken(new ArrayList<>())
+                .time(new Date())
+                .build();
+
         Optional<Chat> chat = chatRepository.findByChatName(messageChatDTO.getChatName());
 
+        Optional<Message> messageToSave = null;
         if (chat.isPresent()) {
-            log.info("Chat found: " + messageChatDTO.getChatName());
+            log.debug("Chat found: " + messageChatDTO.getChatName());
             messageToSave = messageService.saveMessage(chat.get(), message);
         } else {
-            log.info("Chat not found: " + messageChatDTO.getChatName());
+            log.debug("Chat not found: " + messageChatDTO.getChatName());
             Chat newChat = createOrCheckChat(messageChatDTO.getChatName()).get();
             messageToSave = messageService.saveMessage(newChat, message);
         }
-
-
-        messageChatDTOToSave.setId(messageToSave.get().getId());
-        messageChatDTOToSave.setMessage(messageToSave.get().getMessage());
-        messageChatDTOToSave.setUser(messageToSave.get().getUser());
-        messageChatDTOToSave.setChatName(messageToSave.get().getChat().getChatName());
+        MessageChatDTO messageChatDTOToSave = new MessageChatDTO.Builder()
+                .id(messageToSave.get().getId())
+                .user(messageToSave.get().getUser())
+                .message(messageToSave.get().getMessage())
+                .chatName(messageToSave.get().getChat().getChatName())
+                .build();
 
         return Optional.of(messageChatDTOToSave);
     }
@@ -216,10 +269,10 @@ public class ChatServiceImpl implements ChatService  {
         String userToken = splitToken(token);
         Optional<Chat> chat = chatRepository.findByChatName(chatName);
         if (chat.isEmpty()) {
-            log.info("Chat not found: " + chatName);
+            log.debug("Chat not found: " + chatName);
             return false;
         }
-        log.info("check new messages:");
+        log.debug("check new messages:");
         List<Message> messages = messageService.getMessagesByChatId(chat.get().getId())
                 .stream()
                 .filter(message -> {
@@ -229,8 +282,8 @@ public class ChatServiceImpl implements ChatService  {
                     return !message.getUsersToken().contains(userToken);
                 })
                 .toList();
-        log.info("messages found");
-        log.info("checkNewMessages messages: " + messages.size());
+        log.debug("messages found");
+        log.debug("checkNewMessages messages: " + messages.size());
         return !messages.isEmpty();
     }
 
@@ -250,9 +303,9 @@ public class ChatServiceImpl implements ChatService  {
 
             if (!chat.get().getUsers().contains(user.getUsername())) {
                 chat.get().getUsers().add(user.getUsername());
-                log.info("User added to chat: " + user.getUsername() + " to chat: " + chatName);
+                log.debug("User added to chat: " + user.getUsername() + " to chat: " + chatName);
             } else {
-                log.info("User already in chat: " + user.getUsername());
+                log.debug("User already in chat: " + user.getUsername());
             }
             updateChat(chat.get());
             return chat.get().getUsers().stream().map(username -> {
@@ -264,7 +317,7 @@ public class ChatServiceImpl implements ChatService  {
             UserChatDTO userChatDTO = new UserChatDTO();
             userChatDTO.setUsername(user.getUsername());
             users.add(userChatDTO);
-            log.info("Chat not found, returning user: " + user.getUsername());
+            log.debug("Chat not found, returning user: " + user.getUsername());
             return users;
         }
     }
@@ -272,7 +325,7 @@ public class ChatServiceImpl implements ChatService  {
 
     public String splitToken(String token) {
         if (token == null || token.isEmpty()) {
-            log.info("Token is null or empty");
+            log.debug("Token is null or empty");
             return null;
         }
         String[] tokenParts = token.split(" ")[1].split("\\.");

@@ -15,6 +15,9 @@ public class ImageService {
     @Autowired
     private ImageRepository imageRepository;
 
+    @Autowired
+    private UserService userService;
+
     public Long saveImage(MultipartFile file, Long userId) throws IOException {
         Image image = new Image();
         image.setName(file.getOriginalFilename());
@@ -28,6 +31,15 @@ public class ImageService {
     }
 
     public Optional<Image> getImageByUserId(Long userId) {
+        Optional<Image> image = imageRepository.findByUserId(userId);
+        if (image.isEmpty()) {
+            return Optional.of(new Image());
+        }
+        return image;
+    }
+
+    public Optional<Image> getImageByUserName(String userName) {
+        Long userId = userService.getUserIdByUserName(userName);
         Optional<Image> image = imageRepository.findByUserId(userId);
         if (image.isEmpty()) {
             return Optional.of(new Image());

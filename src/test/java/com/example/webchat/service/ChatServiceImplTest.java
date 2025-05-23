@@ -19,8 +19,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class ChatServiceImplTest {
@@ -30,6 +29,9 @@ class ChatServiceImplTest {
 
     @Mock
     private MessageService messageService;
+
+    @Mock
+    private ImageService imageService;
 
     @Mock
     private UserService userService;
@@ -83,7 +85,6 @@ class ChatServiceImplTest {
     void testGetNewChatMessages() {
         String chatName = "TestChat";
         String token = "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ3ZXIiLCJpYXQiOjE2ODAwMDAwMDB9.Av1G07kSLzxyz4nZj0bUYog9Bs8DBHoH7jHPDKtaK20";
-        String userToken = "Av1G07kSLzxyz4nZj0bUYog9Bs8DBHoH7jHPDKtaK20";
 
         Chat mockChat = new Chat();
         mockChat.setId(1L);
@@ -94,12 +95,18 @@ class ChatServiceImplTest {
         mockMessage.setMessage("Hello");
         mockMessage.setUser("User1");
         mockMessage.setUsersToken(new ArrayList<>());
+        mockMessage.setTime(new Date()); // Ensure a valid Date is set
 
-        when(chatRepository.findByChatName(chatName)).thenReturn(Optional.of(mockChat));
+        User mockUser = new User();
+        mockUser.setUserID(1L); // Set a valid user ID
+        when(userService.getAuthenticatedUser()).thenReturn(mockUser);
+
+        when(chatRepository.findByChatName(chatName)).thenReturn(Optional.of(mockChat)); // Ensure a non-empty Optional
         when(messageService.getMessagesByChatId(mockChat.getId())).thenReturn(List.of(mockMessage));
 
         List<MessageResponseDTO> result = chatServiceImpl.getNewChatMessages(chatName, token);
 
+        assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("User1", result.get(0).getUsername());
         assertEquals("Hello", result.get(0).getMessage());
@@ -121,15 +128,22 @@ class ChatServiceImplTest {
         mockMessage.setMessage("Hello");
         mockMessage.setUser("User1");
         mockMessage.setUsersToken(List.of(userToken));
+        mockMessage.setTime(new Date()); // Ensure a valid Date is set
+
+        User mockUser = new User();
+        mockUser.setUserID(1L); // Set a valid user ID
+        when(userService.getAuthenticatedUser()).thenReturn(mockUser);
+
+        when(chatRepository.findByChatName(chatName)).thenReturn(Optional.of(mockChat)); // Ensure a non-empty Optional
 
         when(chatRepository.findByChatName(chatName)).thenReturn(Optional.of(mockChat));
         when(messageService.getMessagesByChatId(mockChat.getId())).thenReturn(List.of(mockMessage));
 
-        List<MessageChatDTO> result = chatServiceImpl.getOldChatMessages(chatName, token);
+        List<MessageResponseDTO> result = chatServiceImpl.getOldChatMessages(chatName, token);
 
         assertEquals(1, result.size());
         assertEquals("Hello", result.get(0).getMessage());
-        assertEquals("User1", result.get(0).getUser());
+        assertEquals("User1", result.get(0).getUsername());
         verify(chatRepository, times(1)).findByChatName(chatName);
         verify(messageService, times(1)).getMessagesByChatId(mockChat.getId());
     }

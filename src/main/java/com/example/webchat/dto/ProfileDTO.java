@@ -33,14 +33,9 @@ public class ProfileDTO {
 
     private String twoFactors;
 
-    private String cardType;
+    private String message;
 
-    private String nameOfCard;
 
-    private String cardNumber;
 
-    private String cardExpiryDate;
-
-    private String cvv;
 
 }

@@ -1,6 +1,7 @@
 package com.example.webchat.controller;
 
 import com.example.webchat.dto.ProfileDTO;
+import com.example.webchat.dto.ProfileResponseDTO;
 import com.example.webchat.model.Profile;
 import com.example.webchat.model.User;
 import com.example.webchat.service.ImageService;
@@ -28,21 +29,14 @@ public class ProfileController {
     private final ActivityService activityService;
 
     @PostMapping("/profile")
-    public ResponseEntity<HashMap<String, String>> profile(@Valid @RequestBody ProfileDTO profileDTO) {
+    public ResponseEntity<?> profile(@Valid @RequestBody ProfileDTO profileDTO) {
         log.info("Profile " + profileDTO.toString());
-        User user = userService.getAuthenticatedUser();
-        Optional<Profile> profile = profileService.createProfile(profileDTO);
-        HashMap<String, String> response = new HashMap<>();
+        Optional<ProfileResponseDTO> profileResponseDTO = profileService.createProfile(profileDTO);
+        if (profileResponseDTO.isEmpty()) {
 
-        if (profile.isEmpty()) {
-            response.put("message", "Profile creation failed");
-            response.put("success", "false");
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body("Profile creation failed");
         }
-        activityService.addActivity("Profile create", user.getUserID(), new Date());
-        response.put("message", "Profile created successfully");
-        response.put("success", "true");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(profileResponseDTO);
     }
 
     @PutMapping("/profile")

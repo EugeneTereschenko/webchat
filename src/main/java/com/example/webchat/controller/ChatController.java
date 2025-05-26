@@ -61,11 +61,6 @@ public class ChatController {
     public ResponseEntity<?> loadOldMessages(@RequestParam String chatName, @RequestHeader("Authorization") String token) {
         List<MessageResponseDTO> messageResponseDTOS = chatService.getOldChatMessages(chatName, token);
         if (!messageResponseDTOS.isEmpty()) {
-            messageResponseDTOS.stream()
-                    .forEach(messageResponseDTO -> {
-                        log.info(messageResponseDTO.toString());
-                    });
-
             return ResponseEntity.ok(messageResponseDTOS);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");
@@ -75,11 +70,6 @@ public class ChatController {
     public ResponseEntity<?> loadNewMessages(@RequestParam String chatName, @RequestHeader("Authorization") String token) {
         List<MessageResponseDTO> messageResponseDTOs = chatService.getNewChatMessages(chatName, token);
         if (!messageResponseDTOs.isEmpty()) {
-            messageResponseDTOs.stream()
-                    .forEach(messageResponseDTO -> {
-                        log.info(messageResponseDTO.toString());
-                    });
-
             return ResponseEntity.ok(messageResponseDTOs);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");

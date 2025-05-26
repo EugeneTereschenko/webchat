@@ -159,6 +159,27 @@ function setProfileElements() {
         "</section>";
 }
 
+function createCardElement(cardType, cardNumber, cvv) {
+    const cardElement = document.createElement('div');
+    cardElement.className = 'mt-4 d-flex justify-content-between align-items-center';
+
+    const cardContent = `
+        <div class="d-flex flex-row align-items-center">
+            <img src="https://i.imgur.com/qHX7vY1.webp" class="rounded" width="70" />
+            <div class="d-flex flex-column ms-3">
+                <span class="h5 mb-1">${cardType || 'Credit Card'}</span>
+                <span class="small text-muted">${cardNumber || 'XXXX XXXX XXXX XXXX'}</span>
+            </div>
+        </div>
+        <div>
+            <input type="text" class="form-control" placeholder="CVC" style="width: 70px;" value="${cvv || ''}" />
+        </div>
+    `;
+
+    cardElement.innerHTML = cardContent;
+    return cardElement;
+}
+
 
 async function sendMarkAsReadMessages(idElement) {
 
@@ -666,7 +687,7 @@ async function loadBillingData() {
     }
 
     try {
-        const response = await fetch('/chat/api/allProfiles', {
+        const response = await fetch('/chat/api/getCard', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
@@ -677,29 +698,20 @@ async function loadBillingData() {
             throw new Error(`Failed to fetch profiles: ${response.status}`);
         }
 
-        const profiles = await response.json(); // Parse the response as JSON
+        const cards = await response.json(); // Parse the response as JSON
         const container = document.getElementById('formControlLg'); // Target container for billing data
 
         if (container) {
             container.innerHTML = ''; // Clear existing content
-
-            profiles.forEach(profile => {
-                const profileHtml = `
-                    <div class="mt-4 d-flex justify-content-between align-items-center">
-                        <div class="d-flex flex-row align-items-center">
-                            <img src="https://i.imgur.com/qHX7vY1.webp" class="rounded" width="70" />
-                            <div class="d-flex flex-column ms-3">
-                                <span class="h5 mb-1">${profile.cardType || 'Credit Card'}</span>
-                                <span class="small text-muted">${profile.cardNumber || 'XXXX XXXX XXXX XXXX'}</span>
-                            </div>
-                        </div>
-                        <div>
-                            <input type="text" class="form-control" placeholder="CVC" style="width: 70px;" />
-                        </div>
-                    </div>
-                `;
-                container.insertAdjacentHTML('beforeend', profileHtml); // Append the profile HTML
-            });
+            if (Array.isArray(cards)) {
+                cards.forEach(card => {
+                    const cardElement = createCardElement(card.cardType, card.cardNumber, card.cvv);
+                    container.appendChild(cardElement);
+                });
+            } else if (cards) {
+                const cardElement = createCardElement(cards.cardType, cards.cardNumber, cards.cvv);
+                container.appendChild(cardElement);
+            }
         } else {
             console.error('Element with id "formControlLg" not found.');
         }
@@ -939,33 +951,12 @@ async function updateProfile() {
 }
 
 async function sendProfile() {
-    let cardType = '';
-    const debtCard = document.getElementById('checkoutForm3');
-    const type2Card = document.getElementById('checkoutForm4');
-    const type3Card = document.getElementById('checkoutForm5');
-
-    if (debtCard && debtCard.checked) {
-        cardType = 'credit';
-    }
-    if (type2Card && type2Card.checked) {
-        cardType = 'debt';
-    }
-    if (type3Card && type3Card.checked) {
-        cardType = 'virtual';
-    }
-
-    console.log('Selected card type:', cardType);
 
     const profileData = {
         firstName: document.getElementById('form6Example1').value,
         lastName: document.getElementById('form6Example2').value,
         address: document.getElementById('form6Example4').value,
-        phoneNumber: document.getElementById('form6Example6').value,
-        cardType: cardType,
-        nameOfCard: document.getElementById('formNameOnCard').value,
-        cardNumber: document.getElementById('formCardNumber').value,
-        cardExpiryDate: document.getElementById('formExpiration').value,
-        cvv: document.getElementById('formCVV').value,
+        phoneNumber: document.getElementById('form6Example6').value
     };
 
     console.log('Profile data:', profileData);
@@ -994,9 +985,71 @@ async function sendProfile() {
         const data = await response.json();
         console.log('Profile saved successfully', data);
         // Optionally, refresh the messages or update the UI
+        sendCard(data.profileId); // Assuming the response contains a profileId
     } catch (error) {
         console.error('Error saving profile:', error);
     }
+}
+
+async function sendCard(profileId) {
+
+    let cardType = '';
+    const debtCard = document.getElementById('checkoutForm3');
+    const type2Card = document.getElementById('checkoutForm4');
+    const type3Card = document.getElementById('checkoutForm5');
+
+    if (debtCard && debtCard.checked) {
+        cardType = 'credit';
+    }
+    if (type2Card && type2Card.checked) {
+        cardType = 'debt';
+    }
+    if (type3Card && type3Card.checked) {
+        cardType = 'virtual';
+    }
+
+    console.log('Selected card type:', cardType);
+
+    const cardData = {
+        profileId: profileId || '', // Use the provided profileId or an empty string
+        cardType: cardType,
+        nameOfCard: document.getElementById('formNameOnCard').value,
+        cardNumber: document.getElementById('formCardNumber').value,
+        cardExpiryDate: document.getElementById('formExpiration').value,
+        cvv: document.getElementById('formCVV').value,
+    };
+
+    console.log('Card data:', cardData);
+
+    const token = localStorage.getItem('authToken');
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/api/sendCard', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify(cardData)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to save card: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Card saved successfully', data);
+        // Optionally, refresh the messages or update the UI
+    } catch (error) {
+        console.error('Error saving card:', error);
+    }
+
+
 }
 
 async function addPhoto() {

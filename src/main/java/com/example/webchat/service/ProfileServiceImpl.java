@@ -1,15 +1,22 @@
 package com.example.webchat.service;
 
+import com.example.webchat.dto.CardDTO;
 import com.example.webchat.dto.ProfileDTO;
+import com.example.webchat.dto.ProfileResponseDTO;
 import com.example.webchat.exception.ProfileNotValueException;
+import com.example.webchat.model.Card;
 import com.example.webchat.model.Profile;
 import com.example.webchat.model.User;
+import com.example.webchat.repository.CardRepository;
 import com.example.webchat.repository.ProfileRepository;
+import com.example.webchat.service.impl.ActivityService;
+import com.example.webchat.service.impl.CardService;
 import com.example.webchat.service.impl.ProfileService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,8 +26,10 @@ import java.util.Optional;
 public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository profileRepository;
+    private final CardRepository cardRepository;
     private final UserService userService;
     private final EmailNotificationService emailNotificationService;
+    private final ActivityService activityService;
 
     public void saveProfile(ProfileDTO profileDTO) {
         Profile profile = new Profile.Builder()
@@ -34,11 +43,12 @@ public class ProfileServiceImpl implements ProfileService {
                 .notification(Optional.ofNullable(profileDTO.getNotification())
                         .map(Boolean::parseBoolean)
                         .orElse(false))
-                .nameOfCard(Optional.ofNullable(profileDTO.getNameOfCard()).orElse("VISA"))
+                .message(Optional.ofNullable(profileDTO.getMessage()).orElse("Welcome to your profile!"))
+/*                .nameOfCard(Optional.ofNullable(profileDTO.getNameOfCard()).orElse("VISA"))
                 .cardType(Optional.ofNullable(profileDTO.getCardType()).orElse("debt"))
                 .cardNumber(Optional.ofNullable(profileDTO.getCardNumber()).orElse("1234-5678-9012-3456"))
                 .cardExpiryDate(Optional.ofNullable(profileDTO.getCardExpiryDate()).orElse("12/25"))
-                .cvv(Optional.ofNullable(profileDTO.getCvv()).orElse("123"))
+                .cvv(Optional.ofNullable(profileDTO.getCvv()).orElse("123"))*/
                 .build();
         profileRepository.save(profile);
     }
@@ -61,8 +71,22 @@ public class ProfileServiceImpl implements ProfileService {
     }
 
 
-    public Optional<Profile> createProfile(ProfileDTO profileDTO) {
+    public Optional<ProfileResponseDTO> createProfile(ProfileDTO profileDTO) {
         User user = userService.getAuthenticatedUser();
+        Optional<Profile> createdProfile = createProfileForUser(profileDTO, user);
+        ProfileResponseDTO profileResponseDTO = new ProfileResponseDTO();
+        if (createdProfile.isPresent()) {
+            profileResponseDTO.setProfileId(String.valueOf(createdProfile.get().getId()));
+            profileResponseDTO.setMessage("Profile created successfully");
+            profileResponseDTO.setSuccess("true");
+            log.info("Profile created for user: " + user.getUsername());
+            return Optional.of(profileResponseDTO);
+        }
+
+        return Optional.empty();
+    }
+
+    private Optional<Profile> createProfileForUser(ProfileDTO profileDTO, User user) {
         Profile profile = new Profile.Builder()
                 .userId(user.getUserID())
                 .firstName(Optional.ofNullable(profileDTO.getFirstName()).orElse("John"))
@@ -75,15 +99,18 @@ public class ProfileServiceImpl implements ProfileService {
                 .notification(Optional.ofNullable(profileDTO.getNotification())
                         .map(Boolean::parseBoolean)
                         .orElse(false))
-                .nameOfCard(Optional.ofNullable(profileDTO.getNameOfCard()).orElse("VISA"))
+                .message(Optional.ofNullable(profileDTO.getMessage()).orElse("Welcome to your profile!"))
+/*                .nameOfCard(Optional.ofNullable(profileDTO.getNameOfCard()).orElse("VISA"))
                 .cardType(Optional.ofNullable(profileDTO.getCardType()).orElse("debt"))
                 .cardNumber(Optional.ofNullable(profileDTO.getCardNumber()).orElse("1234-5678-9012-3456"))
                 .cardExpiryDate(Optional.ofNullable(profileDTO.getCardExpiryDate()).orElse("12/25"))
-                .cvv(Optional.ofNullable(profileDTO.getCvv()).orElse("123"))
+                .cvv(Optional.ofNullable(profileDTO.getCvv()).orElse("123"))*/
                 .build();
+        Profile savedProfile = profileRepository.save(profile);
 
-        if (profileRepository.save(profile) != null) {
-            return Optional.of(profile);
+        if (savedProfile != null) {
+            activityService.addActivity("Profile create", user.getUserID(), new Date());
+            return Optional.of(savedProfile);
         }
 
         return Optional.empty();
@@ -108,13 +135,21 @@ public class ProfileServiceImpl implements ProfileService {
         profileDTO.setAddress(profile.getAddress());
         profileDTO.setPhoneNumber(profile.getPhoneNumber());
         profileDTO.setNotification(String.valueOf(profile.getNotification()));
-        profileDTO.setNameOfCard(profile.getNameOfCard());
+        profileDTO.setMessage(profile.getMessage());
+/*        profileDTO.setNameOfCard(profile.getNameOfCard());
         profileDTO.setCardType(profile.getCardType());
         profileDTO.setCardNumber(profile.getCardNumber());
         profileDTO.setCardExpiryDate(profile.getCardExpiryDate());
-        profileDTO.setCvv(profile.getCvv());
+        profileDTO.setCvv(profile.getCvv());*/
         log.info(profileDTO.toString() + " profileDTO");
         return Optional.of(profileDTO);
+    }
+
+    public Optional<Profile> getProfileByUserId() {
+        User user = userService.getAuthenticatedUser();
+        return profileRepository.findById(user.getUserID())
+                .map(Optional::of)
+                .orElseGet(() -> Optional.empty());
     }
 
     public List<ProfileDTO> getAllProfiles(Long userId) {
@@ -133,15 +168,65 @@ public class ProfileServiceImpl implements ProfileService {
             profileDTO.setAddress(profile.getAddress());
             profileDTO.setPhoneNumber(profile.getPhoneNumber());
             profileDTO.setNotification(String.valueOf(profile.getNotification()));
-            profileDTO.setNameOfCard(profile.getNameOfCard());
+            profileDTO.setMessage(profile.getMessage());
+/*            profileDTO.setNameOfCard(profile.getNameOfCard());
             profileDTO.setCardType(profile.getCardType());
             profileDTO.setCardNumber(profile.getCardNumber());
             profileDTO.setCardExpiryDate(profile.getCardExpiryDate());
-            profileDTO.setCvv(profile.getCvv());
+            profileDTO.setCvv(profile.getCvv());*/
             return profileDTO;
         }).toList();
         log.info(profileDTOs.toString() + " all profiles");
         return profileDTOs;
+    }
+
+    public boolean addCardToProfile(Long cardId) {
+        User user = userService.getAuthenticatedUser();
+        List<Profile> profiles = profileRepository.findAllByUserId(user.getUserID());
+        if (profiles.isEmpty()) {
+            return false;
+        }
+        Profile profile = profiles.get(profiles.size() - 1);
+        if (profile == null) {
+            return false;
+        }
+        Optional<Card> card = Optional.ofNullable(cardRepository.getCardById(cardId).orElse(null));
+        if (card.isEmpty()) {
+            return false;
+        }
+        profile.setCard(card.get());
+        profileRepository.save(profile);
+        return true;
+    }
+
+    public Optional<CardDTO> createAndAddCardToProfile(CardDTO cardDTO) {
+        if (cardDTO == null || cardDTO.getCardExpiryDate() == null || cardDTO.getCardNumber() == null) {
+            return Optional.empty(); // Return empty if the DTO is invalid
+        }
+        // Create a new Card object from the DTO
+        Card card = new Card.Builder()
+                .cardNumber(cardDTO.getCardNumber())
+                .cardExpiryDate(cardDTO.getCardExpiryDate())
+                .cardType(cardDTO.getCardType())
+                .nameOfCard(cardDTO.getNameOfCard())
+                .build();
+        // Save the card to the repository
+        Card savedCard = cardRepository.save(card);
+        if (savedCard == null) {
+            return Optional.empty();
+        }
+        if (!addCardToProfile(card.getId())) {
+           return Optional.empty();
+        }
+        CardDTO savedCardDTO = new CardDTO.Builder()
+                .id(savedCard.getId())
+                .cardType(savedCard.getCardType())
+                .nameOfCard(savedCard.getNameOfCard())
+                .cardNumber(savedCard.getCardNumber())
+                .cardExpiryDate(savedCard.getCardExpiryDate())
+                .cvv(savedCard.getCvv())
+                .build();
+        return Optional.of(savedCardDTO);
     }
 
     public boolean updateNotification(String name, Boolean notification) {
@@ -158,5 +243,25 @@ public class ProfileServiceImpl implements ProfileService {
         profileRepository.save(profile);
         emailNotificationService.sendEmail(user.getEmail(), "Notification Update", "This is the email body.");
         return true;
+    }
+
+    public Optional<CardDTO> getCard() {
+        Optional<Profile> profile = getProfileByUserId();
+        if (profile.isPresent()) {
+            Card card = profile.get().getCard();
+            if (card != null) {
+
+                CardDTO cardDTO = new CardDTO.Builder()
+                        .id(card.getId())
+                        .cardType(card.getCardType())
+                        .nameOfCard(card.getNameOfCard())
+                        .cardNumber(card.getCardNumber())
+                        .cardExpiryDate(card.getCardExpiryDate())
+                        .cvv(card.getCvv())
+                        .build();
+                return Optional.of(cardDTO);
+            }
+        }
+        return Optional.empty();
     }
 }

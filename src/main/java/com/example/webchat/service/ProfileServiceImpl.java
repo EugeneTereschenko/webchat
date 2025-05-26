@@ -53,7 +53,7 @@ public class ProfileServiceImpl implements ProfileService {
         profileRepository.save(profile);
     }
 
-    public void updateProfile(ProfileDTO profileDTO) {
+    public Optional<ProfileResponseDTO> updateProfile(ProfileDTO profileDTO) {
 
         User user = userService.getAuthenticatedUser();
 
@@ -67,7 +67,28 @@ public class ProfileServiceImpl implements ProfileService {
         }
         profile.setBio(profileDTO.getBio());
         profile.setStaff(profileDTO.getStaff());
-        profileRepository.save(profile);
+        profile.setMessage(profileDTO.getMessage());
+        Profile profileSaved = profileRepository.save(profile);
+
+        ProfileResponseDTO profileResponseDTO = new ProfileResponseDTO();
+
+        if (profileSaved != null) {
+            log.info("Profile updated for user: " + user.getUsername());
+            activityService.addActivity("Profile updated", user.getUserID(), new Date());
+            String token = userService.changeUsername(user.getUsername(), profileDTO.getUsername());
+            profileResponseDTO.setProfileId(String.valueOf(profileSaved.getId()));
+            profileResponseDTO.setMessage("Profile updated successfully");
+            profileResponseDTO.setSuccess("true");
+            profileResponseDTO.setToken(token);
+            profileResponseDTO.setUserID(String.valueOf(user.getUserID()));
+            return Optional.of(profileResponseDTO);
+        } else {
+            log.error("Failed to update profile for user: " + user.getUsername());
+        }
+
+        profileResponseDTO.setMessage("Failed to update profile");
+        profileResponseDTO.setSuccess("false");
+        return Optional.of(profileResponseDTO);
     }
 
 
@@ -136,11 +157,7 @@ public class ProfileServiceImpl implements ProfileService {
         profileDTO.setPhoneNumber(profile.getPhoneNumber());
         profileDTO.setNotification(String.valueOf(profile.getNotification()));
         profileDTO.setMessage(profile.getMessage());
-/*        profileDTO.setNameOfCard(profile.getNameOfCard());
-        profileDTO.setCardType(profile.getCardType());
-        profileDTO.setCardNumber(profile.getCardNumber());
-        profileDTO.setCardExpiryDate(profile.getCardExpiryDate());
-        profileDTO.setCvv(profile.getCvv());*/
+
         log.info(profileDTO.toString() + " profileDTO");
         return Optional.of(profileDTO);
     }
@@ -152,11 +169,12 @@ public class ProfileServiceImpl implements ProfileService {
                 .orElseGet(() -> Optional.empty());
     }
 
-    public List<ProfileDTO> getAllProfiles(Long userId) {
-        List<Profile> profiles = profileRepository.findAllByUserId(userId);
-        log.info("Get all profiles by userId: " + userId);
+    public List<ProfileDTO> getAllProfiles() {
+        User user = userService.getAuthenticatedUser();
+        List<Profile> profiles = profileRepository.findAllByUserId(user.getUserID());
+        log.debug("Get all profiles by userId: " + user.getUserID());
         if (profiles == null) {
-            throw new ProfileNotValueException("Profiles not found for userId: " + userId);
+            throw new ProfileNotValueException("Profiles not found for userId: " + user.getUserID());
         }
         List<ProfileDTO> profileDTOs = profiles.stream().map(profile -> {
             ProfileDTO profileDTO = new ProfileDTO();
@@ -169,14 +187,10 @@ public class ProfileServiceImpl implements ProfileService {
             profileDTO.setPhoneNumber(profile.getPhoneNumber());
             profileDTO.setNotification(String.valueOf(profile.getNotification()));
             profileDTO.setMessage(profile.getMessage());
-/*            profileDTO.setNameOfCard(profile.getNameOfCard());
-            profileDTO.setCardType(profile.getCardType());
-            profileDTO.setCardNumber(profile.getCardNumber());
-            profileDTO.setCardExpiryDate(profile.getCardExpiryDate());
-            profileDTO.setCvv(profile.getCvv());*/
+
             return profileDTO;
         }).toList();
-        log.info(profileDTOs.toString() + " all profiles");
+        log.debug(profileDTOs.toString() + " all profiles");
         return profileDTOs;
     }
 
@@ -243,6 +257,49 @@ public class ProfileServiceImpl implements ProfileService {
         profileRepository.save(profile);
         emailNotificationService.sendEmail(user.getEmail(), "Notification Update", "This is the email body.");
         return true;
+    }
+
+    public Optional<ProfileDTO> getProfile() {
+        User user = userService.getAuthenticatedUser();
+        Optional<Profile> profile = profileRepository.findById(user.getUserID());
+
+        if (profile.isPresent()) {
+            ProfileDTO profileDTO = new ProfileDTO.Builder()
+                    .firstName(profile.get().getFirstName())
+                    .lastName(profile.get().getLastName())
+                    .shippingAddress(profile.get().getShippingAddress())
+                    .staff(profile.get().getStaff())
+                    .bio(profile.get().getBio())
+                    .address(profile.get().getAddress())
+                    .phoneNumber(profile.get().getPhoneNumber())
+                    .notification(String.valueOf(profile.get().getNotification()))
+                    .message(profile.get().getMessage())
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .isActive(String.valueOf(user.isActive()))
+                    .notification(String.valueOf(false))
+                    .twoFactors(String.valueOf(user.isTwoFactorEnabled()))
+                    .build();
+            return Optional.of(profileDTO);
+        }
+
+        ProfileDTO profileDTO = new ProfileDTO.Builder()
+/*                .firstName(profile.get().getFirstName())
+                .lastName(profile.get().getLastName())
+                .shippingAddress(profile.get().getShippingAddress())
+                .staff(profile.get().getStaff())
+                .bio(profile.get().getBio())
+                .address(profile.get().getAddress())
+                .phoneNumber(profile.get().getPhoneNumber())
+                .notification(String.valueOf(profile.get().getNotification()))
+                .message(profile.get().getMessage())*/
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .isActive(String.valueOf(user.isActive()))
+                .notification(String.valueOf(false))
+                .twoFactors(String.valueOf(user.isTwoFactorEnabled()))
+                .build();
+        return Optional.of(profileDTO);
     }
 
     public Optional<CardDTO> getCard() {

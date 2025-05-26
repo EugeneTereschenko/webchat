@@ -1,5 +1,6 @@
 package com.example.webchat.service;
 
+import com.example.webchat.dto.ProfileResponseDTO;
 import com.example.webchat.dto.UserDTO;
 import com.example.webchat.dto.UserResponseDTO;
 import com.example.webchat.exception.UserBlockedException;
@@ -164,30 +165,39 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public boolean deactivateUser(String username){
-        User userSearch = userRepository.findByUsername(username);
+    public Optional<ProfileResponseDTO> deactivateUser(){
+        User userSearch = getAuthenticatedUser();
         if (userSearch == null) {
             throw new UsernameNotFoundException("User not found");
         }
         userSearch.setActive(false);
         User userSave = userRepository.save(userSearch);
         if (userSave != null){
-            return true;
+            activityService.addActivity("User is locked", userSearch.getUserID(), new Date());
+            ProfileResponseDTO profileResponseDTO = new ProfileResponseDTO();
+            profileResponseDTO.setMessage("User is locked");
+            profileResponseDTO.setSuccess("false");
+
+            return Optional.of(profileResponseDTO);
         }
-        return false;
+        return Optional.empty();
     }
 
-    public boolean activateUser(String username){
-        User userSearch = userRepository.findByUsername(username);
+    public Optional<ProfileResponseDTO> activateUser(){
+        User userSearch = getAuthenticatedUser();
         if (userSearch == null) {
             throw new UsernameNotFoundException("User not found");
         }
         userSearch.setActive(true);
         User userSave = userRepository.save(userSearch);
         if (userSave != null){
-            return true;
+            activityService.addActivity("User is unlocked", userSearch.getUserID(), new Date());
+            ProfileResponseDTO profileResponseDTO = new ProfileResponseDTO();
+            profileResponseDTO.setMessage("User is unlocked");
+            profileResponseDTO.setSuccess("true");
+            return Optional.of(profileResponseDTO);
         }
-        return false;
+        return Optional.empty();
     }
 
 

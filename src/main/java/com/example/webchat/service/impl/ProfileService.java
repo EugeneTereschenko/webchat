@@ -11,13 +11,14 @@ import java.util.Optional;
 
 public interface ProfileService {
     void saveProfile(ProfileDTO profileDTO);
-    void updateProfile(ProfileDTO profileDTO);
+    Optional<ProfileResponseDTO> updateProfile(ProfileDTO profileDTO);
     Optional<ProfileResponseDTO> createProfile(ProfileDTO profileDTO);
     Optional<ProfileDTO> getProfileByUserId(Long userId);
     Optional<Profile> getProfileByUserId();
-    List<ProfileDTO> getAllProfiles(Long userId);
+    List<ProfileDTO> getAllProfiles();
     boolean addCardToProfile(Long cardId);
     Optional<CardDTO> createAndAddCardToProfile(CardDTO cardDTO);
     boolean updateNotification(String name, Boolean notification);
     Optional<CardDTO> getCard();
+    Optional<ProfileDTO> getProfile();
 }

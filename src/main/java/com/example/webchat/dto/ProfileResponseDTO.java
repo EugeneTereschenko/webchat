@@ -7,4 +7,6 @@ public class ProfileResponseDTO {
     private String profileId;
     private String message;
     private String success;
+    private String token;
+    private String userID;
 }

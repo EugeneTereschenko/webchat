@@ -81,14 +81,14 @@ public class ChatController {
         if (messages != null) {
             return ResponseEntity.ok(messages);
         }
-        return ResponseEntity.status(HttpStatus.OK).body("Messages not found");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Messages not found");
     }
 
     @GetMapping("/api/readMessage")
     public ResponseEntity<?> readMessage(@RequestParam String id, @RequestHeader("Authorization") String token) {
         log.info(" Read message with id: " + id);
         messageService.markMessageAsRead(id);
-        return ResponseEntity.status(HttpStatus.OK).body("Message marked as read");
+        return ResponseEntity.status(HttpStatus.OK).body(Collections.singletonMap("message", "Message marked as read"));
     }
 
 

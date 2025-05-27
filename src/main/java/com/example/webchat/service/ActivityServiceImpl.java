@@ -1,12 +1,14 @@
 package com.example.webchat.service;
 
 import com.example.webchat.model.Activity;
+import com.example.webchat.model.User;
 import com.example.webchat.repository.ActivityRepository;
 import com.example.webchat.service.impl.ActivityService;
 import com.example.webchat.util.TimeAgoFormatter;
 import com.example.webchat.util.DateTimeConverter;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;

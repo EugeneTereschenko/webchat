@@ -9,4 +9,12 @@ public class ProfileResponseDTO {
     private String success;
     private String token;
     private String userID;
+
+    public ProfileResponseDTO() {
+    }
+
+    public ProfileResponseDTO(String message, String success) {
+        this.message = message;
+        this.success = success;
+    }
 }

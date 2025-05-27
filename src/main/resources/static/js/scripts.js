@@ -180,6 +180,29 @@ function createCardElement(cardType, cardNumber, cvv) {
     return cardElement;
 }
 
+function createUserElement(username, message, time, unreadCount, avatar) {
+    const userElement = document.createElement('li');
+    userElement.className = 'p-2 border-bottom bg-body-tertiary';
+    userElement.innerHTML = `
+        <a href="#!" class="d-flex justify-content-between">
+            <div class="d-flex flex-row">
+                <img src="data:image/png;base64,${avatar || 'https://mdbcdn.b-cdn.net/img/Photos/Avatars/avatar-8.webp'}"
+                     alt="avatar"
+                     class="rounded-circle d-flex align-self-center me-3 shadow-1-strong"
+                     width="60">
+                <div class="pt-1">
+                    <p class="fw-bold mb-0">${username || 'Unknown User'}</p>
+                    <p class="small text-muted">${message || 'No message available'}</p>
+                </div>
+            </div>
+            <div class="pt-1">
+                <p class="small text-muted mb-1">${time || 'Just now'}</p>
+                ${unreadCount ? `<span class="badge bg-danger float-end">${unreadCount}</span>` : ''}
+            </div>
+        </a>
+    `;
+    return userElement;
+}
 
 async function sendMarkAsReadMessages(idElement) {
 
@@ -198,12 +221,12 @@ async function sendMarkAsReadMessages(idElement) {
             }
         });
 
-        if (!response.ok) {
-            throw new Error(`Failed to mark messages as read: ${response.status}`);
+        if (response.ok) {
+            const data = await response.json();
+            console.log(data.message); // Logs "Message marked as read"
+        } else {
+            console.error('Failed to mark message as read');
         }
-
-        const data = await response.json();
-        console.log('Marked messages as read:', data);
     } catch (error) {
         console.error('Error marking messages as read:', error);
     }
@@ -462,26 +485,7 @@ async function fetchUsers() {
             //usersContainer.innerHTML = '';
 
             data.forEach(user => {
-                const userElement = document.createElement('li');
-                userElement.className = 'p-2 border-bottom bg-body-tertiary';
-                userElement.innerHTML = `
-                    <a href="#!" class="d-flex justify-content-between">
-                        <div class="d-flex flex-row">
-                            <img src="${user.avatar || 'https://mdbcdn.b-cdn.net/img/Photos/Avatars/avatar-8.webp'}"
-                                 alt="avatar"
-                                 class="rounded-circle d-flex align-self-center me-3 shadow-1-strong"
-                                 width="60">
-                            <div class="pt-1">
-                                <p class="fw-bold mb-0">${user.username || 'Unknown User'}</p>
-                                <p class="small text-muted">${user.message || 'No message available'}</p>
-                            </div>
-                        </div>
-                        <div class="pt-1">
-                            <p class="small text-muted mb-1">${user.time || 'Just now'}</p>
-                            ${user.unreadCount ? `<span class="badge bg-danger float-end">${user.unreadCount}</span>` : ''}
-                        </div>
-                    </a>
-                `;
+                const userElement = createUserElement(user.username, user.message, user.time, user.unreadCount, user.avatar)
                 usersContainer.appendChild(userElement);
             });
         }

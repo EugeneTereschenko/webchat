@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -277,7 +278,7 @@ public class ProfileServiceImpl implements ProfileService {
                     .username(user.getUsername())
                     .email(user.getEmail())
                     .isActive(String.valueOf(user.isActive()))
-                    .notification(String.valueOf(false))
+                    .notification(profile.get().getNotification() ? "true" : "false")
                     .twoFactors(String.valueOf(user.isTwoFactorEnabled()))
                     .build();
             return Optional.of(profileDTO);
@@ -320,5 +321,51 @@ public class ProfileServiceImpl implements ProfileService {
             }
         }
         return Optional.empty();
+    }
+
+    public Optional<ProfileResponseDTO> getUpdateNotification(String notification) {
+        log.info("Update user notification " + notification);
+        User user = userService.getAuthenticatedUser();
+        ProfileResponseDTO profileResponseDTO = new ProfileResponseDTO();
+        if (notification.equals("true")) {
+            Boolean result = updateNotification(user.getUsername(), true);
+            activityService.addActivity("Update add Email notifications", user.getUserID(), new Date());
+            profileResponseDTO.setMessage("Notification updated successfully");
+            profileResponseDTO.setSuccess(String.valueOf(result));
+
+        } else {
+            Boolean result = updateNotification(user.getUsername(), false);
+            profileResponseDTO.setMessage("Notification updated successfully");
+            profileResponseDTO.setSuccess(String.valueOf(result));
+        }
+        return Optional.of(profileResponseDTO);
+    }
+
+    public Optional<ProfileResponseDTO> getUpdateMessage(String message) {
+        User user = userService.getAuthenticatedUser();
+        List<Profile> profiles = profileRepository.findAllByUserId(user.getUserID());
+        if (profiles.isEmpty()) {
+            return Optional.empty();
+        }
+        Profile profile = profiles.get(profiles.size() - 1);
+        if (profile == null) {
+            return Optional.empty();
+        }
+        profile.setMessage(message);
+        profileRepository.save(profile);
+        ProfileResponseDTO profileResponseDTO = new ProfileResponseDTO();
+        profileResponseDTO.setMessage("Message updated successfully");
+        profileResponseDTO.setSuccess("true");
+        log.info("Update user message " + message);
+        activityService.addActivity("Update message", user.getUserID(), new Date());
+
+        return Optional.of(profileResponseDTO);
+    }
+
+    public HashMap<String, String> getActivityByUser(String numOfLogs) {
+        log.debug("Get user activity " + numOfLogs);
+        User user = userService.getAuthenticatedUser();
+        HashMap<String, String> response = activityService.getActivitiesByUserId(user.getUserID(), Integer.valueOf(numOfLogs));
+        return response;
     }
 }

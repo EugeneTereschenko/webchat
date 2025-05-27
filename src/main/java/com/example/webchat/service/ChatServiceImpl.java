@@ -3,11 +3,9 @@ package com.example.webchat.service;
 import com.example.webchat.dto.MessageChatDTO;
 import com.example.webchat.dto.MessageResponseDTO;
 import com.example.webchat.dto.UserChatDTO;
-import com.example.webchat.model.Chat;
-import com.example.webchat.model.Image;
-import com.example.webchat.model.Message;
-import com.example.webchat.model.User;
+import com.example.webchat.model.*;
 import com.example.webchat.repository.ChatRepository;
+import com.example.webchat.repository.ChatUsersRepository;
 import com.example.webchat.service.impl.ActivityService;
 import com.example.webchat.service.impl.ChatService;
 import com.example.webchat.service.impl.MessageService;
@@ -32,6 +30,7 @@ public class ChatServiceImpl implements ChatService  {
     private final UserService userService;
     private final ActivityService activityService;
     private final ImageService imageService;
+    private final ChatUsersRepository chatUsersRepository;
 
     public Optional<Chat> createOrCheckChat(String chatName) {
         User user = userService.getAuthenticatedUser();
@@ -39,6 +38,7 @@ public class ChatServiceImpl implements ChatService  {
         if (existingChat.isPresent()) {
             log.debug("Chat already exists: " + chatName);
             activityService.addActivity("Open Chat", user.getUserID(), new Date());
+            updateUserInChat(user, existingChat);
             return existingChat;
         } else {
             log.debug("Creating new chat: " + chatName);
@@ -46,8 +46,46 @@ public class ChatServiceImpl implements ChatService  {
             Chat chat = new Chat();
             chat.setChatName(chatName);
             chatRepository.save(chat);
+
+            addUserToChat(chat, user);
+
             return Optional.of(chat);
         }
+    }
+
+    private void updateUserInChat(User user, Optional<Chat> existingChat) {
+        chatUsersRepository.findByUserIdAndChatId(user.getUserID(), existingChat.get().getId())
+                .ifPresentOrElse(
+                        chatUsers -> {
+                            log.debug("User already in chat: " + user.getUsername() + " in chat: " + existingChat.get().getChatName());
+                            chatUsers.setTime(new Date());
+                            chatUsersRepository.save(chatUsers);
+                        },
+                        () -> {
+                            log.debug("Adding user to existing chat: " + user.getUsername() + " in chat: " + existingChat.get().getChatName());
+                            addUserToChat(existingChat.get(), user);
+                        }
+                );
+    }
+
+    private void addUserToChat(Chat chat, User user) {
+        ChatUsers existingChatUsers = chatUsersRepository.findByUserIdAndChatId(user.getUserID(), chat.getId())
+                .orElse(null);
+
+        if (existingChatUsers != null) {
+            log.debug("User already exists in chat: " + user.getUsername() + " in chat: " + chat.getChatName());
+            existingChatUsers.setTime(new Date());
+            chatUsersRepository.save(existingChatUsers);
+            return;
+        }
+
+        ChatUsers chatUsers = new ChatUsers.Builder()
+                .chatId(chat.getId())
+                .userId(user.getUserID())
+                .time(new Date())
+                .build();
+
+        chatUsersRepository.save(chatUsers);
     }
 
     public Optional<Chat> updateChat(Chat chat) {
@@ -303,23 +341,43 @@ public class ChatServiceImpl implements ChatService  {
 
             if (!chat.get().getUsers().contains(user.getUsername())) {
                 chat.get().getUsers().add(user.getUsername());
+                addUserToChat(chat.get(), user);
                 log.debug("User added to chat: " + user.getUsername() + " to chat: " + chatName);
             } else {
+                updateUserInChat(user, chat);
                 log.debug("User already in chat: " + user.getUsername());
             }
             updateChat(chat.get());
             return chat.get().getUsers().stream().map(username -> {
-                UserChatDTO userChatDTO = new UserChatDTO();
-                userChatDTO.setUsername(username);
+
+                byte[] imageData = new byte[0]; // Placeholder for avatar URL
+                Optional<Image> optionalImage = imageService.getImageByUserName(username);
+                if (optionalImage.isPresent()) {
+                    imageData = optionalImage.get().getData();
+                } else {
+                    log.warn("No image found for user ID: " + user.getUserID());
+                    imageData = new byte[0]; // Provide a default or empty byte array
+                }
+
+                UserChatDTO userChatDTO = new UserChatDTO.Builder()
+                        .username(username)
+                        .avatar(imageData)
+                        .time(getTime(user, chat))
+                        .build();
                 return userChatDTO;
+
             }).toList();
+
         } else {
-            UserChatDTO userChatDTO = new UserChatDTO();
-            userChatDTO.setUsername(user.getUsername());
-            users.add(userChatDTO);
             log.debug("Chat not found, returning user: " + user.getUsername());
             return users;
         }
+    }
+
+    private String getTime(User user, Optional<Chat> chat) {
+        Date date = chatUsersRepository.findTimeByUserIdAndChatId(user.getUserID(), chat.get().getId());
+        String timeAgo = TimeAgoFormatter.timeAgo(DateTimeConverter.toLocalDateTime(date));
+        return timeAgo;
     }
 
 

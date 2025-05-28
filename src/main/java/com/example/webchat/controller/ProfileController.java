@@ -1,11 +1,9 @@
 package com.example.webchat.controller;
 
 import com.example.webchat.dto.ProfileDTO;
-import com.example.webchat.model.Profile;
-import com.example.webchat.model.User;
+import com.example.webchat.dto.ProfileResponseDTO;
 import com.example.webchat.service.ImageService;
 import com.example.webchat.service.UserService;
-import com.example.webchat.service.impl.ActivityService;
 import com.example.webchat.service.impl.ProfileService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,161 +23,128 @@ public class ProfileController {
     private final ProfileService profileService;
     private final ImageService imageService;
     private final UserService userService;
-    private final ActivityService activityService;
 
     @PostMapping("/profile")
-    public ResponseEntity<HashMap<String, String>> profile(@Valid @RequestBody ProfileDTO profileDTO) {
-        log.info("Profile " + profileDTO.toString());
-        User user = userService.getAuthenticatedUser();
-        Optional<Profile> profile = profileService.createProfile(profileDTO);
-        HashMap<String, String> response = new HashMap<>();
-
-        if (profile.isEmpty()) {
-            response.put("message", "Profile creation failed");
-            response.put("success", "false");
-            return ResponseEntity.badRequest().body(response);
+    public ResponseEntity<?> profile(@Valid @RequestBody ProfileDTO profileDTO) {
+        log.debug("ProfileDTO " + profileDTO.toString());
+        Optional<ProfileResponseDTO> profileResponseDTO = profileService.createProfile(profileDTO);
+        if (profileResponseDTO.isEmpty()) {
+            return ResponseEntity.badRequest().body("Profile creation failed");
         }
-        activityService.addActivity("Profile create", user.getUserID(), new Date());
-        response.put("message", "Profile created successfully");
-        response.put("success", "true");
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(profileResponseDTO);
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<HashMap<String, String>> updateProfile(@Valid @RequestBody ProfileDTO profileDTO) {
-        log.info("Update profile " + profileDTO.toString());
-        HashMap<String, String> response = new HashMap<>();
-        try {
-            User user = userService.getAuthenticatedUser();
-            profileService.updateProfile(profileDTO);
-            response.put("message", "Profile updated successfully");
-            response.put("success", "true");
-            String token = userService.changeUsername(user.getUsername(), profileDTO.getUsername());
-            response.put("token", token);
-            response.put("userID", String.valueOf(user.getUserID()));
-            activityService.addActivity("Profile updated", user.getUserID(), new Date());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            response.put("message", "Profile update failed");
-            response.put("success", "false");
-            return ResponseEntity.badRequest().body(response);
+    public ResponseEntity<?> updateProfile(@Valid @RequestBody ProfileDTO profileDTO) {
+        log.debug("Update profileDTO " + profileDTO.toString());
+        Optional<ProfileResponseDTO> profileResponseDTO = profileService.updateProfile(profileDTO);
+        if (profileResponseDTO.isEmpty()) {
+            return ResponseEntity.badRequest().body("Profile update failed");
         }
+        return ResponseEntity.ok().body(profileResponseDTO);
     }
 
     @GetMapping("api/profile")
-    public ResponseEntity<ProfileDTO> getProfile() {
-        try {
-            User user = userService.getAuthenticatedUser();
-            Optional<ProfileDTO> profileDTO = profileService.getProfileByUserId(user.getUserID());
-            profileDTO.get().setUsername(user.getUsername());
-            profileDTO.get().setEmail(user.getEmail());
-            profileDTO.get().setIsActive(String.valueOf(user.isActive()));
-            profileDTO.get().setNotification(String.valueOf(false));
-            profileDTO.get().setTwoFactors(String.valueOf(user.isTwoFactorEnabled()));
-            log.info("Get profile " + profileDTO.get().toString());
-            if (profileDTO.isPresent()) {
-                return ResponseEntity.ok(profileDTO.get());
-            } else {
-                return ResponseEntity.notFound().build();
-            }
-        } catch (Exception e) {
-            log.info(e + " Exception get profile");
-            return ResponseEntity.status(500).body(null);
+    public ResponseEntity<?> getProfile() {
+        log.debug("Get profile");
+        Optional<ProfileDTO> profileDTO = profileService.getProfile();
+        if (profileDTO.isPresent()) {
+            log.debug("Get profile " + profileDTO.get().toString());
+            return ResponseEntity.ok(profileDTO.get());
         }
+        log.debug("Profile not found");
+        return ResponseEntity.status(404).body("Profile not found");
     }
 
     @GetMapping("api/allProfiles")
-    public ResponseEntity<List<ProfileDTO>> getAllProfiles() {
-        try {
-            User user = userService.getAuthenticatedUser();
-            List<ProfileDTO> profileDTO = profileService.getAllProfiles(user.getUserID());
-            log.info("Get all profiles " + profileDTO.toString());
-            if (!profileDTO.isEmpty()) {
-                return ResponseEntity.ok(profileDTO);
-            } else {
-                return ResponseEntity.ok(new ArrayList<>());
-            }
-        } catch (Exception e) {
-            log.info(e + " Exception get all profiles");
-            return ResponseEntity.status(500).body(null);
+    public ResponseEntity<?> getAllProfiles() {
+        List<ProfileDTO> profileDTO = profileService.getAllProfiles();
+        if (!profileDTO.isEmpty()) {
+            log.debug("Get all profiles " + profileDTO.toString());
+            return ResponseEntity.ok(profileDTO);
         }
+        log.debug("No profiles found");
+        return ResponseEntity.status(404).body("No profiles found");
     }
-
 
     @PostMapping("/upload")
     public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
-        try {
-            User user = userService.getAuthenticatedUser();
-            log.info("User upload a photo " + user.getUsername());
-            Long imageId = imageService.saveImage(file, user.getUserID());
-            activityService.addActivity("Upload image", user.getUserID(), new Date());
-            return ResponseEntity.ok("Image uploaded successfully with ID: " + imageId);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error uploading image: " + e.getMessage());
+        String result = imageService.uploadImageToDatabase(file);
+        if (!result.startsWith("Error")) {
+            log.debug("Image upload successful: " + result);
+            return ResponseEntity.ok(result);
         }
+        log.error("Image upload failed: " + result);
+        return ResponseEntity.status(500).body(result);
     }
 
     @GetMapping("/getImage")
     public ResponseEntity<byte[]> getImage() {
-        try {
-            User user = userService.getAuthenticatedUser();
-            byte[] imageData = imageService.getImageByUserId(user.getUserID()).get().getData();
+        byte[] imageDataResult = imageService.getImageForUser();
+        if (imageDataResult != null) {
+            log.debug("Image retrieval successful");
             return ResponseEntity.ok()
                     .header("Content-Type", "image/jpeg") // Adjust based on your image type
-                    .body(imageData);
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(null);
+                    .body(imageDataResult);
         }
+        log.error("Image retrieval failed");
+        return ResponseEntity.status(500).body(null);
     }
 
     @GetMapping("/locked")
-    public ResponseEntity<HashMap<String, String>> locked() {
-        User user = userService.getAuthenticatedUser();
-        userService.deactivateUser(user.getUsername());
-
-        HashMap<String, String> response = new HashMap<>();
-        response.put("message", "User is locked");
-        response.put("success", "false");
-        activityService.addActivity("User is locked", user.getUserID(), new Date());
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> locked() {
+        Optional<ProfileResponseDTO> profileResponseDTO = userService.deactivateUser();
+        if (!profileResponseDTO.isEmpty()) {
+            return ResponseEntity.ok(profileResponseDTO);
+        }
+        return ResponseEntity.badRequest().body("User is already locked or does not exist");
     }
 
     @GetMapping("/unlocked")
-    public ResponseEntity<HashMap<String, String>> unlocked() {
-        User user = userService.getAuthenticatedUser();
-        userService.activateUser(user.getUsername());
-
-        HashMap<String, String> response = new HashMap<>();
-        response.put("message", "User is unlocked");
-        response.put("success", "true");
-        activityService.addActivity("User is unlocked", user.getUserID(), new Date());
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> unlocked() {
+        Optional<ProfileResponseDTO> profileResponseDTO = userService.activateUser();
+        if (!profileResponseDTO.isEmpty()) {
+            return ResponseEntity.ok(profileResponseDTO);
+        }
+        return ResponseEntity.badRequest().body("User is already unlocked or does not exist");
     }
 
     @GetMapping("/activity")
     public ResponseEntity<HashMap<String, String>> getActivity(@RequestParam String numOfLogs) {
-        log.info("Get user activity " + numOfLogs);
-        User user = userService.getAuthenticatedUser();
-        HashMap<String, String> response = activityService.getActivitiesByUserId(user.getUserID(), Integer.valueOf(numOfLogs));
-        return ResponseEntity.ok(response);
+        HashMap<String, String> response = profileService.getActivityByUser(numOfLogs);
+        if (!response.isEmpty()) {
+            log.debug("Get user activity " + numOfLogs);
+            return ResponseEntity.ok(response);
+        }
+        log.warn("No activity found for user with numOfLogs: " + numOfLogs);
+        return ResponseEntity.status(404).body(new HashMap<String, String>() {{
+            put("message", "No activity found for user");
+        }});
     }
 
     @GetMapping("/updateNotification")
-    public ResponseEntity<HashMap<String, String>> updateNotification(@RequestParam String notification) {
-        log.info("Update user notification " + notification);
-        User user = userService.getAuthenticatedUser();
-        HashMap<String, String> response = new HashMap<>();
-        if (notification.equals("true")) {
-            Boolean result = profileService.updateNotification(user.getUsername(), true);
-            activityService.addActivity("Update add Email notifications", user.getUserID(), new Date());
-            response.put("message", "Notification updated successfully");
-            response.put("success", String.valueOf(result));
-        } else {
-            Boolean result = profileService.updateNotification(user.getUsername(), false);
-            response.put("message", "Notification updated successfully");
-            response.put("success", String.valueOf(result));
+    public ResponseEntity<ProfileResponseDTO> updateNotification(@RequestParam String notification) {
+        log.debug("Update user notification " + notification);
+        Optional<ProfileResponseDTO> profileResponseDTO = profileService.getUpdateNotification(notification);
+        if (profileResponseDTO.isPresent()) {
+            log.debug("Notification updated successfully");
+            return ResponseEntity.ok(profileResponseDTO.get());
         }
-        return ResponseEntity.ok(response);
+        log.error("Failed to update notification");
+        return ResponseEntity.status(500).body(new ProfileResponseDTO("Failed to update notification", "false"));
     }
+
+    @GetMapping("/updateMessage")
+    public ResponseEntity<ProfileResponseDTO> updateMessage(@RequestParam String message) {
+        log.debug("Update user message " + message);
+        Optional<ProfileResponseDTO> profileResponseDTO = profileService.getUpdateMessage(message);
+        if (profileResponseDTO.isPresent()) {
+            log.debug("Message updated successfully");
+            return ResponseEntity.ok(profileResponseDTO.get());
+        }
+        log.error("Failed to update message");
+        return ResponseEntity.status(500).body(new ProfileResponseDTO("Failed to update message", "false"));
+    }
+
 
 }

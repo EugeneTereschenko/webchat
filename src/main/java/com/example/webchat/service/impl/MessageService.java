@@ -12,4 +12,5 @@ public interface MessageService {
     Optional<Message> saveMessage(Chat chat, Message message);
     Optional<Message> updateMessage(Message message);
     List<Message> getMessagesByChatId(Long chatId);
+    Long countUnreadMessagesByUser(String user);
 }

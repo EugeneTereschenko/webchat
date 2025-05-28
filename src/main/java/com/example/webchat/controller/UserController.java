@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -143,21 +142,6 @@ public class UserController {
             userResponseDTO.setMessage("Failed to update two-factor" + e.getMessage());
             return ResponseEntity.status(401).body(userResponseDTO);
         }
-    }
-
-    private UserResponseDTO createResponse(UserDTO userDTO, User user) {
-        UserResponseDTO userResponseDTO = new UserResponseDTO();
-        activityService.addActivity("User login", user.getUserID(), new Date());
-        log.debug("request for User controller. login: " + userDTO.getUsername());
-        String token = userService.authenticateUser(Optional.ofNullable(user.getUsername()).orElse(userDTO.getUsername()), userDTO.getPassword());
-        log.info("token: " + token);
-        log.debug("Login attempt for user: " + userDTO.toString());
-        userResponseDTO.setToken(token);
-        userResponseDTO.setUserID(String.valueOf(user.getUserID()));
-        userResponseDTO.setMessage("User logged in successfully");
-        userResponseDTO.setSuccess("true");
-
-        return userResponseDTO;
     }
 
 }

@@ -61,11 +61,6 @@ public class ChatController {
     public ResponseEntity<?> loadOldMessages(@RequestParam String chatName, @RequestHeader("Authorization") String token) {
         List<MessageResponseDTO> messageResponseDTOS = chatService.getOldChatMessages(chatName, token);
         if (!messageResponseDTOS.isEmpty()) {
-            messageResponseDTOS.stream()
-                    .forEach(messageResponseDTO -> {
-                        log.info(messageResponseDTO.toString());
-                    });
-
             return ResponseEntity.ok(messageResponseDTOS);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");
@@ -75,11 +70,6 @@ public class ChatController {
     public ResponseEntity<?> loadNewMessages(@RequestParam String chatName, @RequestHeader("Authorization") String token) {
         List<MessageResponseDTO> messageResponseDTOs = chatService.getNewChatMessages(chatName, token);
         if (!messageResponseDTOs.isEmpty()) {
-            messageResponseDTOs.stream()
-                    .forEach(messageResponseDTO -> {
-                        log.info(messageResponseDTO.toString());
-                    });
-
             return ResponseEntity.ok(messageResponseDTOs);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat not found");
@@ -91,14 +81,14 @@ public class ChatController {
         if (messages != null) {
             return ResponseEntity.ok(messages);
         }
-        return ResponseEntity.status(HttpStatus.OK).body("Messages not found");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Messages not found");
     }
 
     @GetMapping("/api/readMessage")
     public ResponseEntity<?> readMessage(@RequestParam String id, @RequestHeader("Authorization") String token) {
         log.info(" Read message with id: " + id);
         messageService.markMessageAsRead(id);
-        return ResponseEntity.status(HttpStatus.OK).body("Message marked as read");
+        return ResponseEntity.status(HttpStatus.OK).body(Collections.singletonMap("message", "Message marked as read"));
     }
 
 

@@ -6,6 +6,7 @@ import com.example.webchat.model.Chat;
 import com.example.webchat.model.Message;
 import com.example.webchat.model.User;
 import com.example.webchat.repository.ChatRepository;
+import com.example.webchat.repository.ChatUsersRepository;
 import com.example.webchat.service.impl.ActivityService;
 import com.example.webchat.service.impl.MessageService;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,9 @@ class ChatServiceImplTest {
 
     @Mock
     private ActivityService activityService;
+
+    @Mock
+    private ChatUsersRepository chatUsersRepository;
 
     @InjectMocks
     private ChatServiceImpl chatServiceImpl;

@@ -71,4 +71,10 @@ public class MessageServiceImpl implements MessageService {
         message.setIsRead(true);
         messageRepository.save(message);
     }
+
+    @Override
+    public Long countUnreadMessagesByUser(String user) {
+        Long count = messageRepository.countUnreadMessageByUser(user);
+        return count;
+    }
 }

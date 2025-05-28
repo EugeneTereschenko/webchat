@@ -47,20 +47,12 @@ public class Profile {
     @Column(name = "notification", length = 255)
     private Boolean notification;
 
-    @Column(name = "card_type", length = 255)
-    private String cardType;
+    @Column(name = "message", length = 255)
+    private String message;
 
-    @Column(name = "name_of_card", length = 255)
-    private String nameOfCard;
-
-    @Column(name = "card_number", length = 255)
-    private String cardNumber;
-
-    @Column(name = "expiration_date", length = 255)
-    private String cardExpiryDate;
-
-    @Column(name = "cvv", length = 255)
-    private String cvv;
+    @ManyToOne // or @OneToOne, depending on your relationship
+    @JoinColumn(name = "card_id") // This maps the foreign key column
+    private Card card;
 
 
     private Profile(Builder builder) {
@@ -75,11 +67,8 @@ public class Profile {
         this.bio = builder.bio;
         this.profilePicture = builder.profilePicture;
         this.notification = builder.notification;
-        this.cardType = builder.cardType;
-        this.nameOfCard = builder.nameOfCard;
-        this.cardNumber = builder.cardNumber;
-        this.cardExpiryDate = builder.cardExpiryDate;
-        this.cvv = builder.cvv;
+        this.message = builder.message;
+        this.card = builder.card;
     }
 
 
@@ -95,11 +84,8 @@ public class Profile {
         private String bio;
         private String profilePicture;
         private Boolean notification;
-        private String cardType;
-        private String nameOfCard;
-        private String cardNumber;
-        private String cardExpiryDate;
-        private String cvv;
+        private String message;
+        private Card card;
 
         public Builder id(Long id) {
             this.id = id;
@@ -156,28 +142,13 @@ public class Profile {
             return this;
         }
 
-        public Builder cardType(String cardType) {
-            this.cardType = cardType;
+        public Builder message(String message) {
+            this.message = message;
             return this;
         }
 
-        public Builder nameOfCard(String nameOfCard) {
-            this.nameOfCard = nameOfCard;
-            return this;
-        }
-
-        public Builder cardNumber(String cardNumber) {
-            this.cardNumber = cardNumber;
-            return this;
-        }
-
-        public Builder cardExpiryDate(String cardExpiryDate) {
-            this.cardExpiryDate = cardExpiryDate;
-            return this;
-        }
-
-        public Builder cvv(String cvv) {
-            this.cvv = cvv;
+        public Builder card(Card card) {
+            this.card = card;
             return this;
         }
 

@@ -6,6 +6,7 @@ import com.example.webchat.dto.UserChatDTO;
 import com.example.webchat.model.*;
 import com.example.webchat.repository.ChatRepository;
 import com.example.webchat.repository.ChatUsersRepository;
+import com.example.webchat.repository.MessageRepository;
 import com.example.webchat.service.impl.ActivityService;
 import com.example.webchat.service.impl.ChatService;
 import com.example.webchat.service.impl.MessageService;
@@ -344,7 +345,7 @@ public class ChatServiceImpl implements ChatService  {
                 addUserToChat(chat.get(), user);
                 log.debug("User added to chat: " + user.getUsername() + " to chat: " + chatName);
             } else {
-                updateUserInChat(user, chat);
+                //updateUserInChat(user, chat);
                 log.debug("User already in chat: " + user.getUsername());
             }
             updateChat(chat.get());
@@ -359,9 +360,13 @@ public class ChatServiceImpl implements ChatService  {
                     imageData = new byte[0]; // Provide a default or empty byte array
                 }
 
+                Long unreadCount = messageService.countUnreadMessagesByUser(username);
+
                 UserChatDTO userChatDTO = new UserChatDTO.Builder()
+                        .userId(String.valueOf(userService.getUserByUsername(username).getUserID()))
                         .username(username)
                         .avatar(imageData)
+                        .unreadCount(String.valueOf(unreadCount))
                         .time(getTime(user, chat))
                         .build();
                 return userChatDTO;

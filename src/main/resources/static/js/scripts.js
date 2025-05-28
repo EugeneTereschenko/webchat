@@ -180,9 +180,10 @@ function createCardElement(cardType, cardNumber, cvv) {
     return cardElement;
 }
 
-function createUserElement(username, message, time, unreadCount, avatar) {
+function createUserElement({ userId, username, message, time, unreadCount, avatar }) {
     const userElement = document.createElement('li');
     userElement.className = 'p-2 border-bottom bg-body-tertiary';
+    userElement.id = "users" + userId; // Set the ID for the user element with a prefix
     userElement.innerHTML = `
         <a href="#!" class="d-flex justify-content-between">
             <div class="d-flex flex-row">
@@ -197,11 +198,35 @@ function createUserElement(username, message, time, unreadCount, avatar) {
             </div>
             <div class="pt-1">
                 <p class="small text-muted mb-1">${time || 'Just now'}</p>
-                ${unreadCount ? `<span class="badge bg-danger float-end">${unreadCount}</span>` : ''}
+                ${unreadCount && unreadCount > 0 ? `<span class="badge bg-danger float-end">${unreadCount}</span>` : ''}
             </div>
         </a>
     `;
     return userElement;
+}
+
+function updateUserElement({ userId, username, message, time, unreadCount, avatar }) {
+    const userElement = document.getElementById("users" + userId);
+    userElement.innerHTML = ''; // Clear existing content
+    userElement.innerHTML = `
+        <a href="#!" class="d-flex justify-content-between">
+            <div class="d-flex flex-row">
+                <img src="data:image/png;base64,${avatar || 'https://mdbcdn.b-cdn.net/img/Photos/Avatars/avatar-8.webp'}"
+                     alt="avatar"
+                     class="rounded-circle d-flex align-self-center me-3 shadow-1-strong"
+                     width="60">
+                <div class="pt-1">
+                    <p class="fw-bold mb-0">${username || 'Unknown User'}</p>
+                    <p class="small text-muted">${message || 'No message available'}</p>
+                </div>
+            </div>
+            <div class="pt-1">
+                <p class="small text-muted mb-1">${time || 'Just now'}</p>
+                ${unreadCount && unreadCount > 0 ? `<span class="badge bg-danger float-end">${unreadCount}</span>` : ''}
+            </div>
+        </a>
+    `;
+
 }
 
 async function sendMarkAsReadMessages(idElement) {
@@ -224,6 +249,7 @@ async function sendMarkAsReadMessages(idElement) {
         if (response.ok) {
             const data = await response.json();
             console.log(data.message); // Logs "Message marked as read"
+            fetchUsers();
         } else {
             console.error('Failed to mark message as read');
         }
@@ -484,10 +510,17 @@ async function fetchUsers() {
         if (usersContainer) {
             //usersContainer.innerHTML = '';
 
-            data.forEach(user => {
-                const userElement = createUserElement(user.username, user.message, user.time, user.unreadCount, user.avatar)
+        data.forEach(user => {
+            let userElement = document.getElementById("users" + user.userId);
+            if (userElement) {
+                console.log(`User element with ID "users${user.userId}" already exists, updating content.`);
+                updateUserElement(user);
+            } else {
+                userElement = createUserElement(user);
                 usersContainer.appendChild(userElement);
-            });
+            }
+        });
+
         }
     } catch (error) {
         console.error('Error fetching user data:', error);
@@ -1133,6 +1166,7 @@ async function sendChatMessage() {
         if (response.ok) {
             console.log('Message saved successfully');
             fetchChatMessages();
+            fetchUsers();
         }
     } catch (error) {
         console.error('Failed to save message', error);
@@ -1994,3 +2028,4 @@ document.addEventListener('change', function (event) {
 window.onload = function () {
     getChat();
 }
+

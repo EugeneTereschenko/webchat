@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Data
 public class UserChatDTO {
+    private String userId;
     private String username;
     private String message;
     private String time;
@@ -15,6 +16,7 @@ public class UserChatDTO {
     private String unreadCount;
 
     private UserChatDTO(Builder builder) {
+        this.userId = builder.userId;
         this.username = builder.username;
         this.message = builder.message;
         this.time = builder.time;
@@ -23,11 +25,17 @@ public class UserChatDTO {
     }
 
     public static class Builder {
+        private String userId;
         private String username;
         private String message;
         private String time;
         private byte[] avatar;
         private String unreadCount;
+
+        public Builder userId(String userId) {
+            this.userId = userId;
+            return this;
+        }
 
         public Builder username(String username) {
             this.username = username;

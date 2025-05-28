@@ -35,6 +35,15 @@ public class DatabaseInitializer {
             anotherUser.setSalt("TESTWORLD");
             userRepository.save(anotherUser);
             System.out.println("Another user saved to database: " + anotherUser.getUsername());
+
+            // You can add more initial data here if needed
+            User anotherThirdUser = new User();
+            anotherThirdUser.setUsername("war");
+            anotherThirdUser.setEmail("war@test.com");
+            anotherThirdUser.setPassword(passwordEncoder.encode("TESTWORLD"));
+            anotherThirdUser.setSalt("TESTWORLD");
+            userRepository.save(anotherThirdUser);
+            System.out.println("Another user saved to database: " + anotherThirdUser.getUsername());
         };
     }
 }

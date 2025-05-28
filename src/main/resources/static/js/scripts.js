@@ -79,7 +79,7 @@ function createMessageElement(id, avatar, username, time, messageContent, isRead
              width="60">
         <div class="card">
             <div class="card-header d-flex justify-content-between p-3">
-                <p class="fw-bold mb-0">${username || 'Unknown User'}</p>
+                <p class="fw-bold mb-0" id="user-message${id}">${username || 'Unknown User'}</p>
                 <p class="text-muted small mb-0"><i class="far fa-clock"></i> ${time || 'Just now'}</p>
             </div>
             <div class="card-body">
@@ -248,7 +248,7 @@ async function sendMarkAsReadMessages(idElement) {
 
         if (response.ok) {
             const data = await response.json();
-            console.log(data.message); // Logs "Message marked as read"
+            //console.log(data.message); // Logs "Message marked as read"
             fetchUsers();
         } else {
             console.error('Failed to mark message as read');
@@ -283,12 +283,22 @@ async function fetchAndDisplayOldMessages(chatName) {
         console.log('Fetched messages:', messages);
         if (messagesContainer) {
             messages.forEach(message => {
+
+                let userElementText = document.getElementById("user-message" + (message.id - 1))?.textContent;
+                console.log(`User element text for ID "user-message${message.id - 1}":`, userElementText);
+                if (userElementText && userElementText === message.username) {
+                    //isAvatarLeft = !isAvatarLeft;
+                    console.log(`User element with ID "user-message${message.id - 1}" found, toggling avatar position.`);
+                } else {
+                    isAvatarLeft = !isAvatarLeft; // Toggle avatar position
+                }
+
                 const messageElement = isAvatarLeft
                     ? createMessageElement(message.id, message.avatar, message.username, message.time, message.message, message.isRead)
                     : createMessageElementAvatarRight(message.id, message.avatar, message.username, message.time, message.message, message.isRead);
 
                 messagesContainer.appendChild(messageElement);
-                isAvatarLeft = !isAvatarLeft; // Toggle avatar position
+
             });
         } else {
             console.error('Messages container not found');
@@ -464,12 +474,24 @@ async function fetchChatMessages() {
         if (messagesContainer) {
             //messagesContainer.innerHTML = '';
             data.forEach(message => {
+
+
+                let userElementText = document.getElementById("user-message" + (message.id - 1))?.textContent;
+
+                if (userElementText && userElementText === message.username) {
+                    console.log(`User element text for ID "user-message${message.id - 1}":`, userElementText);
+                } else {
+                    console.log(`User element with ID "user-message${message.id - 1}" found, toggling avatar position.`);
+                    isAvatarLeft = !isAvatarLeft; // Toggle avatar position
+                }
+
+
                 const messageElement = isAvatarLeft
                     ? createMessageElement(message.id, message.avatar, message.username, message.time, message.message)
                     : createMessageElementAvatarRight(message.id, message.avatar, message.username, message.time, message.message);
 
                 messagesContainer.appendChild(messageElement);
-                isAvatarLeft = !isAvatarLeft; // Toggle avatar position
+                //isAvatarLeft = !isAvatarLeft; // Toggle avatar position
             });
             scrollToBottom();
         } else {
@@ -513,7 +535,7 @@ async function fetchUsers() {
         data.forEach(user => {
             let userElement = document.getElementById("users" + user.userId);
             if (userElement) {
-                console.log(`User element with ID "users${user.userId}" already exists, updating content.`);
+                //console.log(`User element with ID "users${user.userId}" already exists, updating content.`);
                 updateUserElement(user);
             } else {
                 userElement = createUserElement(user);

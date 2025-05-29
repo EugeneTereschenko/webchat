@@ -15,7 +15,7 @@ public interface ChatUsersRepository extends JpaRepository<ChatUsers, Long> {
     Optional<ChatUsers> findById(Long aLong);
 
     //Optional<ChatUsers> findByUserIdAndChatName(Long userId, String chatName);
-
+    @Query("SELECT c FROM ChatUsers c WHERE c.userId = :userId AND c.chatId = :chatId")
     Optional<ChatUsers> findByUserIdAndChatId(Long userId, Long chatId);
 
     @Query("SELECT c.time FROM ChatUsers c WHERE c.userId = :userId AND c.chatId = :chatId")

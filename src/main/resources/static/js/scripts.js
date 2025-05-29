@@ -79,7 +79,7 @@ function createMessageElement(id, avatar, username, time, messageContent, isRead
              width="60">
         <div class="card">
             <div class="card-header d-flex justify-content-between p-3">
-                <p class="fw-bold mb-0">${username || 'Unknown User'}</p>
+                <p class="fw-bold mb-0" id="user-message${id}">${username || 'Unknown User'}</p>
                 <p class="text-muted small mb-0"><i class="far fa-clock"></i> ${time || 'Just now'}</p>
             </div>
             <div class="card-body">
@@ -248,7 +248,7 @@ async function sendMarkAsReadMessages(idElement) {
 
         if (response.ok) {
             const data = await response.json();
-            console.log(data.message); // Logs "Message marked as read"
+            //console.log(data.message); // Logs "Message marked as read"
             fetchUsers();
         } else {
             console.error('Failed to mark message as read');
@@ -283,12 +283,22 @@ async function fetchAndDisplayOldMessages(chatName) {
         console.log('Fetched messages:', messages);
         if (messagesContainer) {
             messages.forEach(message => {
+
+                let userElementText = document.getElementById("user-message" + (message.id - 1))?.textContent;
+                console.log(`User element text for ID "user-message${message.id - 1}":`, userElementText);
+                if (userElementText && userElementText === message.username) {
+                    //isAvatarLeft = !isAvatarLeft;
+                    console.log(`User element with ID "user-message${message.id - 1}" found, toggling avatar position.`);
+                } else {
+                    isAvatarLeft = !isAvatarLeft; // Toggle avatar position
+                }
+
                 const messageElement = isAvatarLeft
                     ? createMessageElement(message.id, message.avatar, message.username, message.time, message.message, message.isRead)
                     : createMessageElementAvatarRight(message.id, message.avatar, message.username, message.time, message.message, message.isRead);
 
                 messagesContainer.appendChild(messageElement);
-                isAvatarLeft = !isAvatarLeft; // Toggle avatar position
+
             });
         } else {
             console.error('Messages container not found');
@@ -464,12 +474,24 @@ async function fetchChatMessages() {
         if (messagesContainer) {
             //messagesContainer.innerHTML = '';
             data.forEach(message => {
+
+
+                let userElementText = document.getElementById("user-message" + (message.id - 1))?.textContent;
+
+                if (userElementText && userElementText === message.username) {
+                    console.log(`User element text for ID "user-message${message.id - 1}":`, userElementText);
+                } else {
+                    console.log(`User element with ID "user-message${message.id - 1}" found, toggling avatar position.`);
+                    isAvatarLeft = !isAvatarLeft; // Toggle avatar position
+                }
+
+
                 const messageElement = isAvatarLeft
                     ? createMessageElement(message.id, message.avatar, message.username, message.time, message.message)
                     : createMessageElementAvatarRight(message.id, message.avatar, message.username, message.time, message.message);
 
                 messagesContainer.appendChild(messageElement);
-                isAvatarLeft = !isAvatarLeft; // Toggle avatar position
+                //isAvatarLeft = !isAvatarLeft; // Toggle avatar position
             });
             scrollToBottom();
         } else {
@@ -484,13 +506,22 @@ async function fetchChatMessages() {
 
 async function fetchUsers() {
     const token = localStorage.getItem('authToken');
-    const chatName = document.getElementById('chat-name')?.value;
+    var chatName = document.getElementById('chat-name')?.value;
+    const chatNameFromChat = document.getElementById('chat-name-value')?.textContent;
 
     if (!token) {
         console.error('No auth token found');
         return;
     }
 
+    if (chatNameFromChat) {
+        chatName = chatNameFromChat; // Use the chat name from the chat element
+    }
+
+    if (!chatName) {
+        console.error('Chat name is required');
+        return;
+    }
     try {
         const response = await fetch(`/chat/api/users?chatName=${encodeURIComponent(chatName)}`, {
             method: 'GET',
@@ -513,7 +544,7 @@ async function fetchUsers() {
         data.forEach(user => {
             let userElement = document.getElementById("users" + user.userId);
             if (userElement) {
-                console.log(`User element with ID "users${user.userId}" already exists, updating content.`);
+                //console.log(`User element with ID "users${user.userId}" already exists, updating content.`);
                 updateUserElement(user);
             } else {
                 userElement = createUserElement(user);
@@ -1150,7 +1181,7 @@ async function sendChatMessage() {
     const messageChatData = {
         user: "",
         message: document.getElementById('message-message').value,
-        chatName: document.getElementById('chat-name')?.value
+        chatName: document.getElementById('chat-name-value')?.textContent
     };
     console.log('Message     data:', messageChatData);
 
@@ -1566,6 +1597,10 @@ async function searchMessageForChat(keyword, page) {
         const paginationDiv = document.createElement('div');
         paginationDiv.id = 'pagination-container';
         panel.appendChild(paginationDiv);
+
+        const addPanelElement = document.createElement('div');
+        addPanelElement.id = 'panel';
+        panel.appendChild(addPanelElement);
 
         const containerPagination = document.getElementById('pagination-container'); // Example container
         console.log(" containerPagination " + containerPagination);

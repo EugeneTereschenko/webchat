@@ -506,13 +506,22 @@ async function fetchChatMessages() {
 
 async function fetchUsers() {
     const token = localStorage.getItem('authToken');
-    const chatName = document.getElementById('chat-name')?.value;
+    var chatName = document.getElementById('chat-name')?.value;
+    const chatNameFromChat = document.getElementById('chat-name-value')?.textContent;
 
     if (!token) {
         console.error('No auth token found');
         return;
     }
 
+    if (chatNameFromChat) {
+        chatName = chatNameFromChat; // Use the chat name from the chat element
+    }
+
+    if (!chatName) {
+        console.error('Chat name is required');
+        return;
+    }
     try {
         const response = await fetch(`/chat/api/users?chatName=${encodeURIComponent(chatName)}`, {
             method: 'GET',
@@ -1172,7 +1181,7 @@ async function sendChatMessage() {
     const messageChatData = {
         user: "",
         message: document.getElementById('message-message').value,
-        chatName: document.getElementById('chat-name')?.value
+        chatName: document.getElementById('chat-name-value')?.textContent
     };
     console.log('Message     data:', messageChatData);
 
@@ -1588,6 +1597,10 @@ async function searchMessageForChat(keyword, page) {
         const paginationDiv = document.createElement('div');
         paginationDiv.id = 'pagination-container';
         panel.appendChild(paginationDiv);
+
+        const addPanelElement = document.createElement('div');
+        addPanelElement.id = 'panel';
+        panel.appendChild(addPanelElement);
 
         const containerPagination = document.getElementById('pagination-container'); // Example container
         console.log(" containerPagination " + containerPagination);

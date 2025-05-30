@@ -1196,6 +1196,8 @@ async function sendChatMessage() {
     };
     console.log('Message     data:', messageChatData);
 
+    document.getElementById('message-message').value = '';
+
     try {
         response = await fetch('/chat/api/chatAdd', {
             method: 'POST',
@@ -2077,6 +2079,20 @@ document.addEventListener('change', function (event) {
         } else {
             console.log('TwoFactors are disabled');
             twoFactors(false);
+        }
+    }
+});
+
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') {
+        const messageAdd = document.querySelector('#button_send_message');
+        if (messageAdd) {
+            messageAdd.click(); // Simulate a click event on the button
+        }
+        const addChat = document.querySelector('#button-add-chat');
+        if (addChat) {
+            addChat.click(); // Simulate a click event on the button
         }
     }
 });

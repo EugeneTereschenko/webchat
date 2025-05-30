@@ -1,23 +1,8 @@
 let n = 1; // Current page number
 let isAvatarLeft = false; // Flag to alternate avatar positions
 
-
-function setCookie(name, value, days) {
-    const d = new Date();
-    d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
-    const expires = "expires=" + d.toUTCString();
-    document.cookie = name + "=" + value + ";" + expires + ";path=/";
-}
-
-function getCookie(name) {
-    const nameEQ = name + "=";
-    const ca = document.cookie.split(';');
-    for (let i = 0; i < ca.length; i++) {
-        let c = ca[i];
-        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-    }
-    return null;
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function scrollToBottom() {
@@ -229,6 +214,32 @@ function updateUserElement({ userId, username, message, time, unreadCount, avata
 
 }
 
+function viewSpinner() {
+    const spinner = document.getElementById('spinner');
+    if (spinner) {
+        spinner.innerHTML = `
+                    <div class="d-flex justify-content-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                `;
+    }
+
+    sleep(1000).then(() => {
+        hideSpinner(); // Hide the spinner after 1 second
+    });
+
+}
+
+function hideSpinner() {
+    const spinner = document.getElementById('spinner');
+    if (spinner) {
+        spinner.innerHTML = ``;
+    }
+
+}
+
 async function sendMarkAsReadMessages(idElement) {
 
     const token = localStorage.getItem('authToken'); // Retrieve the auth token
@@ -265,7 +276,7 @@ async function fetchAndDisplayOldMessages(chatName) {
         console.error('No auth token found');
         return;
     }
-
+    viewSpinner(); // Show the spinner while fetching messages
     try {
         const response = await fetch(`/chat/api/oldMessages?chatName=${encodeURIComponent(chatName)}`, {
             method: 'GET',
@@ -455,7 +466,7 @@ async function fetchChatMessages() {
         console.error('Chat name is required');
         return;
     }
-
+    viewSpinner(); // Show the spinner while fetching messages
     try {
         const response = await fetch(`/chat/api/newMessages?chatName=${encodeURIComponent(chatName)}`, {
             method: 'GET',
@@ -1905,18 +1916,21 @@ document.addEventListener('click', function (event) {
     if (chatCreate) {
         event.preventDefault();
         //createChat();
+        viewSpinner();
         sendChatName();
     }
     const messageAdd = event.target.closest('#button_send_message');
     if (messageAdd) {
         event.preventDefault();
         //addMessageToChat();
+        viewSpinner();
         sendChatMessage();
     }
 
     const profileLink = event.target.closest('#profile-link');
     if (profileLink) {
         event.preventDefault();
+        viewSpinner();
         clearPanel();
         loadProfile();
     }
@@ -1924,12 +1938,14 @@ document.addEventListener('click', function (event) {
     if (searchUserLink) {
         event.preventDefault();
         //clearPanel();
+        viewSpinner();
         loadSearchUser();
     }
     const searchChatLink = event.target.closest('#search-chat-link');
     if (searchChatLink) {
         event.preventDefault();
         //clearPanel();
+        viewSpinner();
         loadSearchChat();
         //getChat();
     }
@@ -1937,6 +1953,7 @@ document.addEventListener('click', function (event) {
     const homeButton = event.target.closest('#home-button');
     if (homeButton) {
         event.preventDefault();
+        viewSpinner();
         clearPanel();
         getChat();
     }
@@ -1988,6 +2005,7 @@ document.addEventListener('click', function (event) {
     const profileActivityElement = event.target.closest('#profile-activity');
     if (profileActivityElement) {
         event.preventDefault();
+        viewSpinner();
         clearProfileContent();
         setProfileElements();
         loadProfileActivity("log-info", 5);
@@ -2000,6 +2018,7 @@ document.addEventListener('click', function (event) {
         console.log('Search message:', searchMessage);
         if (searchMessage) {
             clearPanel();
+            viewSpinner();
             searchMessageForChat(searchMessage, n);
         }
     }
@@ -2010,6 +2029,7 @@ document.addEventListener('click', function (event) {
         const searchChatWord = document.getElementById('search-chat-input')?.value;
         console.log('Search chat:', searchChatWord);
         if (searchChat) {
+            viewSpinner();
             searchChat(searchChatWord, n);
         }
     }
@@ -2020,6 +2040,7 @@ document.addEventListener('click', function (event) {
         const searchUserWord = document.getElementById('search-user-input')?.value;
         console.log('Search user:', searchUserWord);
         if (searchUserWord) {
+            viewSpinner();
             searchUser(searchUserWord, n);
         }
     }

@@ -627,6 +627,47 @@ async function loadProfileData() {
     }
 }
 
+async function loadMessage() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/profile/message', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to load search user: ${response.status}`);
+        }
+
+        const html = await response.text(); // Parse the response as text (HTML)
+        const modalContainer = document.getElementById('modal-container'); // Ensure a modal container exists
+
+        if (modalContainer) {
+            modalContainer.innerHTML = html; // Inject the HTML content into the modal container
+
+            const modalElement = modalContainer.querySelector('.modal');
+            if (modalElement) {
+                const modal = new bootstrap.Modal(modalElement); // Initialize the modal
+                modal.show(); // Show the modal
+            } else {
+                console.error('Modal element not found in modalContainer.');
+            }
+        } else {
+            console.error('Modal container not found.');
+        }
+    } catch (error) {
+        console.error('Error loading message', error);
+    }
+}
+
 async function loadSearchUser() {
     const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
 
@@ -2044,6 +2085,37 @@ document.addEventListener('click', function (event) {
         if (searchUserWord) {
             viewSpinner();
             searchUser(searchUserWord, n);
+        }
+    }
+    const profileMessage = event.target.closest('#profile-message');
+    if (profileMessage) {
+        event.preventDefault();
+        clearPanel();
+        viewSpinner();
+        loadMessage();
+        //
+    }
+
+    const closeMessageModal = event.target.closest('#message-value-close-button');
+    if (closeMessageModal) {
+        event.preventDefault();
+        const messageModal = document.getElementById('messageModal');
+        if (messageModal) {
+            const modal = bootstrap.Modal.getInstance(messageModal);
+            if (modal) {
+                modal.hide(); // Hide the modal
+            }
+        }
+    }
+    const closeMessageModalTwo = event.target.closest('#message-value-close-button-two');
+    if (closeMessageModalTwo) {
+        event.preventDefault();
+        const messageModal = document.getElementById('messageModalTwo');
+        if (messageModal) {
+            const modal = bootstrap.Modal.getInstance(messageModal);
+            if (modal) {
+                modal.hide(); // Hide the modal
+            }
         }
     }
 });

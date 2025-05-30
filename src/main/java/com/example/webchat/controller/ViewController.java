@@ -101,4 +101,11 @@ public class ViewController {
         return new ModelAndView("search/searchuser");
     }
 
+    @GetMapping("/profile/message")
+    public ModelAndView profileMessages() {
+
+        log.info("Profile messages attempt for user: get profile messages ");
+        return new ModelAndView("profile/message");
+    }
+
 }

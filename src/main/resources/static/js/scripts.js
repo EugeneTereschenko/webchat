@@ -2099,7 +2099,7 @@ document.addEventListener('click', function (event) {
     const closeMessageModal = event.target.closest('#message-value-close-button');
     if (closeMessageModal) {
         event.preventDefault();
-        const messageModal = document.getElementById('messageModal');
+        const messageModal = document.getElementById('staticBackdrop');
         if (messageModal) {
             const modal = bootstrap.Modal.getInstance(messageModal);
             if (modal) {
@@ -2110,12 +2110,24 @@ document.addEventListener('click', function (event) {
     const closeMessageModalTwo = event.target.closest('#message-value-close-button-two');
     if (closeMessageModalTwo) {
         event.preventDefault();
-        const messageModal = document.getElementById('messageModalTwo');
+        const messageModal = document.getElementById('staticBackdrop');
         if (messageModal) {
             const modal = bootstrap.Modal.getInstance(messageModal);
             if (modal) {
-                modal.hide(); // Hide the modal
+                modal.hide();
             }
+        }
+    }
+    const messageValueButton = event.target;
+    if (messageValueButton && messageValueButton.id === 'message-value-button') {
+        event.preventDefault();
+        const messageValue = document.getElementById('message-value')?.value;
+        if (messageValue) {
+
+            console.log('Message value:', messageValue);
+            // sendChatMessage(); // Uncomment if needed
+        } else {
+            console.error('Message value is empty');
         }
     }
 });

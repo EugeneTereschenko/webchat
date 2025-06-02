@@ -163,6 +163,18 @@ public class ProfileServiceImpl implements ProfileService {
         return Optional.of(profileDTO);
     }
 
+    public Optional<Profile> getProfileByUserName(String username) {
+        User user = userService.getUserByUsername(username);
+        log.info("Get profile by userId: " + user.getUserID());
+        return profileRepository.findAllByUserId(user.getUserID())
+                .stream()
+                .findFirst()
+                .or(() -> {
+                    log.warn("Profile not found for userId: " + user.getUserID());
+                    return Optional.empty();
+                });
+    }
+
     public Optional<Profile> getProfileByUserId() {
         User user = userService.getAuthenticatedUser();
         log.info("Get profile by userId: " + user.getUserID());

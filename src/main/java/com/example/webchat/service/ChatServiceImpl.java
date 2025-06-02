@@ -335,7 +335,6 @@ public class ChatServiceImpl implements ChatService  {
         List<UserChatDTO> users = new ArrayList<>();
         Optional<Chat> chat = getChatByName(chatName);
         User user = userService.getAuthenticatedUser();
-        Optional<Profile> profile = profileService.getProfileByUserId();
 
         if (chat.isPresent()) {
             if (chat.get().getUsers() == null) {
@@ -363,7 +362,7 @@ public class ChatServiceImpl implements ChatService  {
                 }
 
                 Long unreadCount = messageService.countUnreadMessagesByUser(username);
-
+                Optional<Profile> profile = profileService.getProfileByUserName(username);
                 UserChatDTO userChatDTO = new UserChatDTO.Builder()
                         .userId(String.valueOf(userService.getUserByUsername(username).getUserID()))
                         .username(username)

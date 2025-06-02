@@ -2118,7 +2118,7 @@ document.addEventListener('click', function (event) {
     const profileMessage = event.target.closest('#profile-message');
     if (profileMessage) {
         event.preventDefault();
-        clearPanel();
+        //clearPanel();
         viewSpinner();
         loadMessage();
         //
@@ -2153,6 +2153,7 @@ document.addEventListener('click', function (event) {
         if (messageValue) {
             console.log('Message value:', messageValue);
             sendProfileMessage(messageValue);
+            document.getElementById('message-value').value = ''; // Clear the input field
             // sendChatMessage(); // Uncomment if needed
         } else {
             console.error('Message value is empty');

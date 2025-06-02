@@ -1307,6 +1307,34 @@ async function loadProfileActivity(idElement, numOfElements) {
     }
 }
 
+async function sendProfileMessage(message) {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/chat/updateMessage?message=${encodeURIComponent(message)}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        if (!response.ok) {
+            console.error('Failed to send profile message:', response.statusText);
+        }
+
+        const data = await response.json();
+        console.log('Message update successfully:', data);
+
+    } catch (error) {
+        console.error('Error sendProfileMessage:', error);
+    }
+}
+
 async function sendChatName(chatNameToOpen) {
     const token = localStorage.getItem('authToken');
     let chatName = document.getElementById('chat-name')?.value; // Changed to let
@@ -2123,8 +2151,8 @@ document.addEventListener('click', function (event) {
         event.preventDefault();
         const messageValue = document.getElementById('message-value')?.value;
         if (messageValue) {
-
             console.log('Message value:', messageValue);
+            sendProfileMessage(messageValue);
             // sendChatMessage(); // Uncomment if needed
         } else {
             console.error('Message value is empty');

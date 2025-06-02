@@ -32,6 +32,7 @@ public class ChatServiceImpl implements ChatService  {
     private final ActivityService activityService;
     private final ImageService imageService;
     private final ChatUsersRepository chatUsersRepository;
+    private final ProfileServiceImpl profileService;
 
     public Optional<Chat> createOrCheckChat(String chatName) {
         User user = userService.getAuthenticatedUser();
@@ -334,6 +335,7 @@ public class ChatServiceImpl implements ChatService  {
         List<UserChatDTO> users = new ArrayList<>();
         Optional<Chat> chat = getChatByName(chatName);
         User user = userService.getAuthenticatedUser();
+        Optional<Profile> profile = profileService.getProfileByUserId();
 
         if (chat.isPresent()) {
             if (chat.get().getUsers() == null) {
@@ -366,6 +368,7 @@ public class ChatServiceImpl implements ChatService  {
                         .userId(String.valueOf(userService.getUserByUsername(username).getUserID()))
                         .username(username)
                         .avatar(imageData)
+                        .message(profile.map(Profile::getMessage).orElse("No message"))
                         .unreadCount(String.valueOf(unreadCount))
                         .time(getTime(user, chat))
                         .build();

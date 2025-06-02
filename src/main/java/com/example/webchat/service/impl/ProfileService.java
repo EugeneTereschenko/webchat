@@ -14,6 +14,7 @@ public interface ProfileService {
     Optional<ProfileResponseDTO> updateProfile(ProfileDTO profileDTO);
     Optional<ProfileResponseDTO> createProfile(ProfileDTO profileDTO);
     Optional<ProfileDTO> getProfileByUserId(Long userId);
+    Optional<Profile> getProfileByUserName(String username);
     Optional<Profile> getProfileByUserId();
     List<ProfileDTO> getAllProfiles();
     boolean addCardToProfile(Long cardId);

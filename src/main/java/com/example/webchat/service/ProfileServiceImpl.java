@@ -163,11 +163,28 @@ public class ProfileServiceImpl implements ProfileService {
         return Optional.of(profileDTO);
     }
 
+    public Optional<Profile> getProfileByUserName(String username) {
+        User user = userService.getUserByUsername(username);
+        log.info("Get profile by userId: " + user.getUserID());
+        return profileRepository.findAllByUserId(user.getUserID())
+                .stream()
+                .findFirst()
+                .or(() -> {
+                    log.warn("Profile not found for userId: " + user.getUserID());
+                    return Optional.empty();
+                });
+    }
+
     public Optional<Profile> getProfileByUserId() {
         User user = userService.getAuthenticatedUser();
-        return profileRepository.findById(user.getUserID())
-                .map(Optional::of)
-                .orElseGet(() -> Optional.empty());
+        log.info("Get profile by userId: " + user.getUserID());
+        return profileRepository.findAllByUserId(user.getUserID())
+                .stream()
+                .findFirst()
+                .or(() -> {
+                    log.warn("Profile not found for userId: " + user.getUserID());
+                    return Optional.empty();
+                });
     }
 
     public List<ProfileDTO> getAllProfiles() {
@@ -262,7 +279,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     public Optional<ProfileDTO> getProfile() {
         User user = userService.getAuthenticatedUser();
-        Optional<Profile> profile = profileRepository.findById(user.getUserID());
+        Optional<Profile> profile = getProfileByUserId();
 
         if (profile.isPresent()) {
             ProfileDTO profileDTO = new ProfileDTO.Builder()
@@ -305,6 +322,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     public Optional<CardDTO> getCard() {
         Optional<Profile> profile = getProfileByUserId();
+        log.info("profile is " + profile.toString());
         if (profile.isPresent()) {
             Card card = profile.get().getCard();
             if (card != null) {

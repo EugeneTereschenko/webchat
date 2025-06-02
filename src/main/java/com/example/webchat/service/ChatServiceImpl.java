@@ -32,6 +32,7 @@ public class ChatServiceImpl implements ChatService  {
     private final ActivityService activityService;
     private final ImageService imageService;
     private final ChatUsersRepository chatUsersRepository;
+    private final ProfileServiceImpl profileService;
 
     public Optional<Chat> createOrCheckChat(String chatName) {
         User user = userService.getAuthenticatedUser();
@@ -361,11 +362,12 @@ public class ChatServiceImpl implements ChatService  {
                 }
 
                 Long unreadCount = messageService.countUnreadMessagesByUser(username);
-
+                Optional<Profile> profile = profileService.getProfileByUserName(username);
                 UserChatDTO userChatDTO = new UserChatDTO.Builder()
                         .userId(String.valueOf(userService.getUserByUsername(username).getUserID()))
                         .username(username)
                         .avatar(imageData)
+                        .message(profile.map(Profile::getMessage).orElse("No message"))
                         .unreadCount(String.valueOf(unreadCount))
                         .time(getTime(user, chat))
                         .build();

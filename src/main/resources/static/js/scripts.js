@@ -1374,6 +1374,7 @@ async function sendChatName(chatNameToOpen) {
         const data = await response.json();
         console.log('Chat created successfully:', data);
         document.getElementById('chat-name-value').textContent = chatName;
+        document.getElementById('chat-name').value = ''; // Clear the input field
         fetchUsers();
         fetchAndDisplayOldMessages(chatName);
         setInterval(checkNewMessages, 5000);
@@ -2200,11 +2201,13 @@ document.addEventListener('change', function (event) {
 document.addEventListener('keydown', function (event) {
     if (event.key === 'Enter') {
         const messageAdd = document.querySelector('#button_send_message');
-        if (messageAdd) {
+        const messageValue = document.getElementById('message-message')?.value;
+        if (messageAdd && messageValue != null) {
             messageAdd.click(); // Simulate a click event on the button
         }
         const addChat = document.querySelector('#button-add-chat');
-        if (addChat) {
+        const chatNameInput = document.getElementById('chat-name')?.value;
+        if (addChat && chatNameInput != null) {
             addChat.click(); // Simulate a click event on the button
         }
     }

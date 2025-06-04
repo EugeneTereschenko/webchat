@@ -108,4 +108,11 @@ public class ViewController {
         return new ModelAndView("profile/message");
     }
 
+    @GetMapping("/profile/connect")
+    public ModelAndView profileConnect() {
+
+        log.info("Profile connect attempt for user: get profile connections ");
+        return new ModelAndView("profile/connect");
+    }
+
 }

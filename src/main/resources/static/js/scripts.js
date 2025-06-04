@@ -668,6 +668,101 @@ async function loadMessage() {
     }
 }
 
+
+async function loadConnectUserToChat() {
+    const token = localStorage.getItem('authToken'); // Retrieve the auth token from local storage
+
+    if (!token) {
+        console.error('No auth token found');
+        return;
+    }
+    console.log('Loading connect user to chat...');
+    try {
+        const response = await fetch('/chat/profile/connect', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        });
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const html = await response.text(); // Parse the response as text (HTML)
+        const modalContainer = document.getElementById('modal-container'); // Ensure a modal container exists
+
+        if (modalContainer) {
+            modalContainer.innerHTML = html; // Inject the HTML content into the modal container
+
+            const modalElement = modalContainer.querySelector('.modal');
+            if (modalElement) {
+                const modal = new bootstrap.Modal(modalElement); // Initialize the modal
+                modal.show(); // Show the modal
+            } else {
+                console.error('Modal element not found in modalContainer.');
+            }
+
+            loadConnectUsersData();
+        }
+    } catch (error) {
+        console.error('Error fetching connect user to chat:', error);
+    }
+}
+
+async function loadConnectUsersData() {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+    console.log('Loading connect users data...');
+    try {
+        const response = await fetch('/chat/api/allUsers', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            }
+        });
+
+        const modalUserListContainer = document.getElementById('user-connect-list');
+        if (!response.ok) {
+            throw new Error(`Failed to load connect users data: ${response.status}`);
+        }
+        const data = await response.json(); // Parse the response as JSON
+
+        if (modalUserListContainer) {
+            modalUserListContainer.innerHTML = ''; // Clear previous content
+            data.forEach(user => {
+                //add as li element
+                const userElement = document.createElement('li');
+                userElement.className = 'list-group-item';
+                userElement.id = "connect-user" + user.userId; // Set the ID for the user element with a prefix
+                userElement.innerHTML = `
+                    <div class="d-flex flex-row">
+                        <img src="data:image/png;base64,${user.avatar || 'https://mdbcdn.b-cdn.net/img/Photos/Avatars/avatar-8.webp'}"
+                             alt="avatar"
+                             class="rounded-circle d-flex align-self-center me-3 shadow-1-strong"
+                             width="60">
+                        <div class="pt-1">
+                            <p class="fw-bold mb-0">${user.username || 'Unknown User'}</p>
+                        </div>
+                    </div>
+                `;
+                userElement.addEventListener('click', () => {
+                    console.log(`Clicked on: User: ${user.username}`);
+                    createChatForUsers(user); // Call the function to open chat by user ID
+                });
+                modalUserListContainer.appendChild(userElement); // Append the user element to the modal container
+            });
+        }
+
+    } catch (error) {
+        console.error('Error loading connect users data:', error);
+    }
+}
+
 async function loadSearchUser() {
     const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
 
@@ -1335,6 +1430,38 @@ async function sendProfileMessage(message) {
     }
 }
 
+async function addUserToChat(chatName, userName) {
+    const token = localStorage.getItem('authToken'); // Retrieve the Bearer token from localStorage
+
+    if (!token) {
+        console.error('No Bearer token found in localStorage');
+        return;
+    }
+
+    try {
+        const response = await fetch('/chat/api/chatAddUser', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': `Bearer ${token}` // Add the Bearer token to the Authorization header
+            },
+            body: new URLSearchParams({
+                chatName: chatName,
+                userName: userName
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to add user to chat: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('User added to chat successfully:', data);
+    } catch (error) {
+        console.error('Error adding user to chat:', error);
+    }
+}
+
 async function sendChatName(chatNameToOpen) {
     const token = localStorage.getItem('authToken');
     let chatName = document.getElementById('chat-name')?.value; // Changed to let
@@ -1374,7 +1501,9 @@ async function sendChatName(chatNameToOpen) {
         const data = await response.json();
         console.log('Chat created successfully:', data);
         document.getElementById('chat-name-value').textContent = chatName;
-        document.getElementById('chat-name').value = ''; // Clear the input field
+        if (document.getElementById('chat-name')) {
+            document.getElementById('chat-name').value = ''; // Clear the input field
+        }
         fetchUsers();
         fetchAndDisplayOldMessages(chatName);
         setInterval(checkNewMessages, 5000);
@@ -1733,6 +1862,15 @@ function openChatById(result) {
     clearPanel();
     getChat();
     sendChatName(result.chatName);
+}
+
+function createChatForUsers(user) {
+    console.log('Opening chat by ID:', user.userId);
+    console.log('Opening chat by name:', user.username);
+    clearPanel();
+    getChat();
+    addUserToChat("UserConnections", user.username);
+    sendChatName("UserConnections");
 }
 
 function createPagination(num, paginationElementId, type) {
@@ -2159,6 +2297,14 @@ document.addEventListener('click', function (event) {
         } else {
             console.error('Message value is empty');
         }
+    }
+    const closeConnectUserToChat = event.target.closest('#profile-connect');
+    if (closeConnectUserToChat) {
+        event.preventDefault();
+        console.log('Open connect user to chat');
+        loadConnectUserToChat();
+        //loadConnectUsersData();
+        clearModal();
     }
 });
 

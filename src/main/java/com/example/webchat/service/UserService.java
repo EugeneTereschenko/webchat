@@ -1,11 +1,14 @@
 package com.example.webchat.service;
 
 import com.example.webchat.dto.ProfileResponseDTO;
+import com.example.webchat.dto.UserChatDTO;
 import com.example.webchat.dto.UserDTO;
 import com.example.webchat.dto.UserResponseDTO;
 import com.example.webchat.exception.UserBlockedException;
+import com.example.webchat.model.Image;
 import com.example.webchat.model.Role;
 import com.example.webchat.model.User;
+import com.example.webchat.repository.ImageRepository;
 import com.example.webchat.repository.RoleRepository;
 import com.example.webchat.repository.UserRepository;
 import com.example.webchat.security.JwtUtil;
@@ -40,6 +43,7 @@ public class UserService {
     private final TwoFactorAuthService twoFactorAuthService;
     private final EmailNotificationService emailService;
     private final ActivityServiceImpl activityService;
+    private final ImageRepository imageRepository;
 
 
     public User saveUser(User user) {
@@ -52,6 +56,34 @@ public class UserService {
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
+    }
+
+    public List<UserChatDTO> getAllUsersDTO() {
+        List<User> users = userRepository.findAll();
+        List<UserChatDTO> userDTOs = new ArrayList<>();
+        users.stream().map(user -> {
+            UserChatDTO userChatDTO = new UserChatDTO.Builder()
+                    .userId(String.valueOf(user.getUserID()))
+                    .username(user.getUsername())
+                    .avatar(getImageForUserId(user))
+                    .build();
+
+            userDTOs.add(userChatDTO);
+            return userChatDTO;
+        }).toList();
+        return userDTOs;
+    }
+
+    private byte[] getImageForUserId(User user) {
+        byte[] imageData = new byte[0]; // Placeholder for avatar URL
+        Optional<Image> optionalImage = imageRepository.findByUserId(user.getUserID());
+        if (optionalImage.isPresent()) {
+            imageData = optionalImage.get().getData();
+        } else {
+            log.warn("No image found for user ID: " + user.getUserID());
+            imageData = new byte[0]; // Provide a default or empty byte array
+        }
+        return imageData;
     }
 
     public void deleteUser(Long userId) {

@@ -1,5 +1,7 @@
 package com.example.webchat.service;
 
+import com.example.webchat.converters.ChatToChatDtoConverter;
+import com.example.webchat.dto.ChatDTO;
 import com.example.webchat.dto.MessageChatDTO;
 import com.example.webchat.dto.MessageResponseDTO;
 import com.example.webchat.dto.UserChatDTO;
@@ -32,25 +34,24 @@ public class ChatServiceImpl implements ChatService  {
     private final ImageService imageService;
     private final ChatUsersRepository chatUsersRepository;
     private final ProfileServiceImpl profileService;
+    private final ChatToChatDtoConverter chatToChatDtoConverter;
 
-    public Optional<Chat> createOrCheckChat(String chatName) {
+    public Optional<ChatDTO> createOrCheckChat(String chatName) {
         User user = userService.getAuthenticatedUser();
         Optional<Chat> existingChat = chatRepository.findByChatName(chatName);
         if (existingChat.isPresent()) {
             log.debug("Chat already exists: " + chatName);
             activityService.addActivity("Open Chat", user.getUserID(), new Date());
             updateUserInChat(user, existingChat);
-            return existingChat;
+            return chatToChatDtoConverter.convertToDto(existingChat.get().getId(), chatName, existingChat.get().getUsers());
         } else {
             log.debug("Creating new chat: " + chatName);
             activityService.addActivity("Create Chat", user.getUserID(), new Date());
             Chat chat = new Chat();
             chat.setChatName(chatName);
-            chatRepository.save(chat);
-
-            addUserToChat(chat, user);
-
-            return Optional.of(chat);
+            Chat newChat = chatRepository.save(chat);
+            addUserToChat(newChat, user);
+            return chatToChatDtoConverter.convertToDto(newChat.getId(), newChat.getChatName(), newChat.getUsers());
         }
     }
 
@@ -291,7 +292,7 @@ public class ChatServiceImpl implements ChatService  {
             messageToSave = messageService.saveMessage(chat.get(), message);
         } else {
             log.debug("Chat not found: " + messageChatDTO.getChatName());
-            Chat newChat = createOrCheckChat(messageChatDTO.getChatName()).get();
+            Chat newChat = chatRepository.findByChatName(messageChatDTO.getChatName()).get();
             messageToSave = messageService.saveMessage(newChat, message);
         }
         MessageChatDTO messageChatDTOToSave = new MessageChatDTO.Builder()

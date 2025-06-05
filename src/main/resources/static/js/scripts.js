@@ -214,6 +214,58 @@ function updateUserElement({ userId, username, message, time, unreadCount, avata
 
 }
 
+function viewToasts(title, time, message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast show'; // Add 'show' to make it visible
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+
+    const toastHeader = document.createElement('div');
+    toastHeader.className = 'toast-header';
+
+    const img = document.createElement('img');
+    img.src = 'https://via.placeholder.com/20'; // Replace with your image URL
+    img.className = 'rounded me-2';
+    img.alt = '...';
+
+    const strong = document.createElement('strong');
+    strong.className = 'me-auto';
+    strong.textContent = title || 'Bootstrap';
+
+    const small = document.createElement('small');
+    small.className = 'text-body-secondary';
+    small.textContent = time || 'Just now';
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn-close';
+    button.setAttribute('data-bs-dismiss', 'toast');
+    button.setAttribute('aria-label', 'Close');
+
+    toastHeader.appendChild(img);
+    toastHeader.appendChild(strong);
+    toastHeader.appendChild(small);
+    toastHeader.appendChild(button);
+
+    const toastBody = document.createElement('div');
+    toastBody.className = 'toast-body';
+    toastBody.textContent = message || 'Hello, world! This is a toast message.';
+
+    toast.appendChild(toastHeader);
+    toast.appendChild(toastBody);
+
+    document.body.appendChild(toast); // Append the toast to the body or a specific container
+
+    // Hide the toast after 5 seconds
+    setTimeout(() => {
+        toast.classList.remove('show'); // Remove the 'show' class
+        toast.classList.add('hide'); // Optionally add a 'hide' class for animation
+        setTimeout(() => toast.remove(), 500); // Remove the element after the hide animation
+    }, 5000);
+
+}
+
 function viewSpinner() {
     const spinner = document.getElementById('spinner');
     if (spinner) {
@@ -1505,6 +1557,8 @@ async function sendChatName(chatNameToOpen) {
         if (document.getElementById('chat-name')) {
             document.getElementById('chat-name').value = ''; // Clear the input field
         }
+        console.log('data:', data);
+        viewToasts('success', data.time, data.message);
         fetchUsers();
         fetchAndDisplayOldMessages(chatName);
         setInterval(checkNewMessages, 5000);

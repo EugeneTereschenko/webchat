@@ -1,5 +1,7 @@
 package com.example.webchat.service;
 
+import com.example.webchat.converters.ChatToChatDtoConverter;
+import com.example.webchat.dto.ChatDTO;
 import com.example.webchat.dto.MessageChatDTO;
 import com.example.webchat.dto.MessageResponseDTO;
 import com.example.webchat.model.Chat;
@@ -43,6 +45,9 @@ class ChatServiceImplTest {
     @Mock
     private ChatUsersRepository chatUsersRepository;
 
+    @Mock
+    private ChatToChatDtoConverter chatToChatDtoConverter; // Mock the converter
+
     @InjectMocks
     private ChatServiceImpl chatServiceImpl;
 
@@ -59,10 +64,21 @@ class ChatServiceImplTest {
         when(userService.getAuthenticatedUser()).thenReturn(mockUser);
 
         Chat existingChat = new Chat();
+        existingChat.setId(1L);
         existingChat.setChatName(chatName);
+        existingChat.setUsers(new ArrayList<>());
         when(chatRepository.findByChatName(chatName)).thenReturn(Optional.of(existingChat));
 
-        Optional<Chat> result = chatServiceImpl.createOrCheckChat(chatName);
+        ChatDTO mockChatDTO = new ChatDTO.Builder()
+                .id(existingChat.getId())
+                .chatName(existingChat.getChatName())
+                .time("10:00 AM")
+                .message("Welcome")
+                .build();
+        when(chatToChatDtoConverter.convertToDto(existingChat.getId(), chatName, existingChat.getUsers()))
+                .thenReturn(Optional.of(mockChatDTO));
+
+        Optional<ChatDTO> result = chatServiceImpl.createOrCheckChat(chatName);
 
         assertTrue(result.isPresent());
         verify(activityService, times(1)).addActivity(eq("Open Chat"), eq(mockUser.getUserID()), any(Date.class));
@@ -78,9 +94,25 @@ class ChatServiceImplTest {
 
         when(chatRepository.findByChatName(chatName)).thenReturn(Optional.empty());
 
-        Optional<Chat> result = chatServiceImpl.createOrCheckChat(chatName);
+        Chat newChat = new Chat();
+        newChat.setId(2L);
+        newChat.setChatName(chatName);
+        newChat.setUsers(new ArrayList<>());
 
-        assertTrue(result.isPresent());
+        when(chatRepository.save(any(Chat.class))).thenReturn(newChat); // Mock saving the chat
+
+        ChatDTO mockChatDTO = new ChatDTO.Builder()
+                .id(newChat.getId())
+                .chatName(newChat.getChatName())
+                .time("10:00 AM")
+                .message("Welcome")
+                .build();
+        when(chatToChatDtoConverter.convertToDto(newChat.getId(), chatName, newChat.getUsers()))
+                .thenReturn(Optional.of(mockChatDTO)); // Mock the converter
+
+        Optional<ChatDTO> result = chatServiceImpl.createOrCheckChat(chatName);
+
+        assertTrue(result.isPresent(), "Expected the result to be present, but it was empty.");
         verify(activityService, times(1)).addActivity(eq("Create Chat"), eq(mockUser.getUserID()), any(Date.class));
         verify(chatRepository, times(1)).save(any(Chat.class));
     }

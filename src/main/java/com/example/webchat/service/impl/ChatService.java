@@ -1,5 +1,6 @@
 package com.example.webchat.service.impl;
 
+import com.example.webchat.dto.ChatDTO;
 import com.example.webchat.dto.MessageChatDTO;
 import com.example.webchat.dto.MessageResponseDTO;
 import com.example.webchat.dto.UserChatDTO;
@@ -10,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ChatService {
-    Optional<Chat> createOrCheckChat(String chatName);
+    Optional<ChatDTO> createOrCheckChat(String chatName);
     Optional<Chat> updateChat(Chat chat);
     List<MessageResponseDTO> getNewChatMessages(String chatName, String token);
     List<MessageResponseDTO> getChatMessages(String chatName);

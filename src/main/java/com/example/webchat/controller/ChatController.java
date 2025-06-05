@@ -1,5 +1,6 @@
 package com.example.webchat.controller;
 
+import com.example.webchat.dto.ChatDTO;
 import com.example.webchat.dto.MessageChatDTO;
 import com.example.webchat.dto.MessageResponseDTO;
 import com.example.webchat.dto.UserChatDTO;
@@ -59,7 +60,7 @@ public class ChatController {
 
     @PostMapping("/api/chatCreate")
     public ResponseEntity<?> createChat(@RequestParam String name) {
-        Optional<Chat> chat = chatService.createOrCheckChat(name);
+        Optional<ChatDTO> chat = chatService.createOrCheckChat(name);
         if (chat.isPresent()) {
             return ResponseEntity.ok(chat.get());
         }

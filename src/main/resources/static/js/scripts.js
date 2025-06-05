@@ -1457,6 +1457,7 @@ async function addUserToChat(chatName, userName) {
 
         const data = await response.json();
         console.log('User added to chat successfully:', data);
+        sendChatName("UserConnections");
     } catch (error) {
         console.error('Error adding user to chat:', error);
     }
@@ -1870,7 +1871,6 @@ function createChatForUsers(user) {
     clearPanel();
     getChat();
     addUserToChat("UserConnections", user.username);
-    sendChatName("UserConnections");
 }
 
 function createPagination(num, paginationElementId, type) {

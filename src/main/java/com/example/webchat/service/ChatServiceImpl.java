@@ -383,7 +383,13 @@ public class ChatServiceImpl implements ChatService  {
 
     @Override
     public Optional<Chat> addUserToChat(String chatName, String userName) {
-        Optional<Chat> chat = getChatByName(chatName);
+        Optional<Chat> chat = chatRepository.findByChatName(chatName);
+        if (chat.isEmpty()) {
+            Chat newChat = new Chat();
+            newChat.setChatName(chatName);
+            chat = Optional.of(chatRepository.save(newChat));
+        }
+
         chat.ifPresentOrElse(
                 existingChat -> {
                     User user = userService.getUserByUsername(userName);
@@ -392,6 +398,9 @@ public class ChatServiceImpl implements ChatService  {
                         addUserToChat(existingChat, user);
                     } else {
                         log.debug("User not found: " + userName);
+                    }
+                    if (existingChat.getUsers() == null) {
+                        existingChat.setUsers(new ArrayList<>()); // Initialize if null
                     }
                     if (!existingChat.getUsers().contains(userName)){
                         existingChat.getUsers().add(userName);

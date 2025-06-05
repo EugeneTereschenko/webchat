@@ -55,15 +55,6 @@ public class MessageServiceImpl implements MessageService {
         return messageRepository.findByChatId(chatId);
     }
 
-    public Boolean isMessageRead(Long messageId) {
-        Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new RuntimeException("Message not found"));
-        if (message.getIsRead() == null) {
-            return false;
-        }
-        return message.getIsRead();
-    }
-
     public void markMessageAsRead(String messageId) {
 
         Message message = messageRepository.findById(Long.parseLong(messageId))
@@ -73,8 +64,8 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
-    public Long countUnreadMessagesByUser(String user) {
-        Long count = messageRepository.countUnreadMessageByUser(user);
-        return count;
+    public Long countUnreadMessagesByUser(String user, Long chatId) {
+        Long count = messageRepository.countUnreadMessageByUserAndChatId(user, chatId);
+        return count != null ? count : 0L;
     }
 }

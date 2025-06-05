@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Date;
 import java.util.List;
 
 @Repository
@@ -19,4 +18,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     @Query("SELECT count(c) FROM Message c WHERE c.user = :user AND c.isRead = false")
     Long countUnreadMessageByUser(@Param("user") String user);
+
+    @Query("SELECT count(c) FROM Message c WHERE c.user = :user AND c.chat.id = :chatId AND c.isRead = false")
+    Long countUnreadMessageByUserAndChatId(@Param("user") String user, @Param("chatId") Long chatId);
 }

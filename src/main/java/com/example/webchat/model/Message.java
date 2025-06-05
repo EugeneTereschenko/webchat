@@ -22,7 +22,7 @@ public class Message {
     private String message;
 
     @ManyToOne
-    @JoinColumn(name = "chat_id")
+    @JoinColumn(name = "chat_id", nullable = false)
     private Chat chat;
 
     private Boolean isRead = false;

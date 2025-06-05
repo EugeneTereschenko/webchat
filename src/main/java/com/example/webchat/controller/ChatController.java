@@ -48,6 +48,15 @@ public class ChatController {
         return ResponseEntity.ok(savedMessage.get());
     }
 
+    @PostMapping("/api/chatAddUser")
+    public ResponseEntity<?> addUserToChat(@RequestParam String chatName, @RequestParam String userName) {
+        Optional<Chat> chat = chatService.addUserToChat(chatName, userName);
+        if (chat.isPresent()) {
+            return ResponseEntity.ok(chat.get());
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Chat or user not found");
+    }
+
     @PostMapping("/api/chatCreate")
     public ResponseEntity<?> createChat(@RequestParam String name) {
         Optional<Chat> chat = chatService.createOrCheckChat(name);

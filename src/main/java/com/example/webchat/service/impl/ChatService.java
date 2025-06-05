@@ -10,14 +10,15 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ChatService {
-    public Optional<Chat> createOrCheckChat(String chatName);
-    public Optional<Chat> updateChat(Chat chat);
-    public List<MessageResponseDTO> getNewChatMessages(String chatName, String token);
-    public List<MessageResponseDTO> getChatMessages(String chatName);
-    public List<MessageResponseDTO> getOldChatMessages(String chatName, String token);
-    public Optional<MessageChatDTO> addChatMessage(MessageChatDTO messageChatDTO);
-    public Optional<Chat> getChatByName(String chatName);
-    public List<UserChatDTO> getUsersForChat(String chatName);
-    public Boolean checkNewMessages(String chatName, String token);
+    Optional<Chat> createOrCheckChat(String chatName);
+    Optional<Chat> updateChat(Chat chat);
+    List<MessageResponseDTO> getNewChatMessages(String chatName, String token);
+    List<MessageResponseDTO> getChatMessages(String chatName);
+    List<MessageResponseDTO> getOldChatMessages(String chatName, String token);
+    Optional<MessageChatDTO> addChatMessage(MessageChatDTO messageChatDTO);
+    Optional<Chat> getChatByName(String chatName);
+    List<UserChatDTO> getUsersForChat(String chatName);
+    Boolean checkNewMessages(String chatName, String token);
+    Optional<Chat> addUserToChat(String chatName, String userName);
 
 }

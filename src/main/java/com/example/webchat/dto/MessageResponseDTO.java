@@ -1,7 +1,9 @@
 package com.example.webchat.dto;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor
 @Data
 public class MessageResponseDTO {
     private Long id;

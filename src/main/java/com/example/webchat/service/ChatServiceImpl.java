@@ -381,6 +381,43 @@ public class ChatServiceImpl implements ChatService  {
         }
     }
 
+    @Override
+    public Optional<Chat> addUserToChat(String chatName, String userName) {
+        Optional<Chat> chat = chatRepository.findByChatName(chatName);
+        if (chat.isEmpty()) {
+            Chat newChat = new Chat();
+            newChat.setChatName(chatName);
+            chat = Optional.of(chatRepository.save(newChat));
+        }
+
+        chat.ifPresentOrElse(
+                existingChat -> {
+                    User user = userService.getUserByUsername(userName);
+                    if (user != null) {
+                        log.debug("Adding user: " + userName + " to chat: " + chatName);
+                        addUserToChat(existingChat, user);
+                    } else {
+                        log.debug("User not found: " + userName);
+                    }
+                    if (existingChat.getUsers() == null) {
+                        existingChat.setUsers(new ArrayList<>()); // Initialize if null
+                    }
+                    if (!existingChat.getUsers().contains(userName)){
+                        existingChat.getUsers().add(userName);
+                        updateChat(existingChat);
+                        log.debug("User: " + userName + " added to chat: " + chatName);
+                    } else {
+                        log.debug("User: " + userName + " already in chat: " + chatName);
+                    }
+                },
+                () -> log.debug("Chat not found: " + chatName)
+        );
+        if (chat.isPresent()) {
+            return chat;
+        }
+        return Optional.empty();
+    }
+
     private String getTime(User user, Optional<Chat> chat) {
         Date date = chatUsersRepository.findTimeByUserIdAndChatId(user.getUserID(), chat.get().getId());
         String timeAgo = TimeAgoFormatter.timeAgo(DateTimeConverter.toLocalDateTime(date));

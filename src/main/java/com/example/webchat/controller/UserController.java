@@ -144,4 +144,14 @@ public class UserController {
         }
     }
 
+
+    @GetMapping("api/allUsers")
+    public ResponseEntity<?> getAllUsers() {
+        try {
+            return ResponseEntity.ok(userService.getAllUsersDTO());
+        } catch (Exception e) {
+            log.error("Error fetching all users: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching users");
+        }
+    }
 }
